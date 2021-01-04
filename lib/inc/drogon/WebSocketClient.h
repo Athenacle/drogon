@@ -25,6 +25,7 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 class WebSocketClient;
 using WebSocketClientPtr = std::shared_ptr<WebSocketClient>;
 using WebSocketRequestCallback = std::function<
@@ -89,6 +90,7 @@ class WebSocketClient
     static WebSocketClientPtr newWebSocketClient(
         const std::string &ip,
         uint16_t port,
+        HttpAppFrameworkImpl *app,
         bool useSSL = false,
         trantor::EventLoop *loop = nullptr,
         bool useOldTLS = false);
@@ -117,6 +119,7 @@ class WebSocketClient
      */
     static WebSocketClientPtr newWebSocketClient(
         const std::string &hostString,
+        HttpAppFrameworkImpl *app,
         trantor::EventLoop *loop = nullptr,
         bool useOldTLS = false);
 

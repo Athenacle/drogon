@@ -38,9 +38,11 @@ class HttpRequestImpl : public HttpRequest
   public:
     friend class HttpRequestParser;
 
-    explicit HttpRequestImpl(trantor::EventLoop *loop)
+    explicit HttpRequestImpl(HttpAppFrameworkImpl *app,
+                             trantor::EventLoop *loop)
         : creationDate_(trantor::Date::now()), loop_(loop)
     {
+        app_ = (app);
     }
     void reset()
     {

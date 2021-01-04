@@ -29,6 +29,7 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 class HttpRequest;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 
@@ -50,7 +51,7 @@ T fromRequest(const HttpRequest &req)
  * the template for a particular type.
  */
 template <typename T>
-HttpRequestPtr toRequest(T &&)
+HttpRequestPtr toRequest(HttpAppFrameworkImpl *, T &&)
 {
     LOG_ERROR << "You must specialize the toRequest template for the type of "
               << DrClassMap::demangle(typeid(T).name());
@@ -58,13 +59,15 @@ HttpRequestPtr toRequest(T &&)
 }
 
 template <>
-HttpRequestPtr toRequest<const Json::Value &>(const Json::Value &pJson);
+HttpRequestPtr toRequest<const Json::Value &>(HttpAppFrameworkImpl *,
+                                              const Json::Value &pJson);
 template <>
-HttpRequestPtr toRequest(Json::Value &&pJson);
+HttpRequestPtr toRequest(HttpAppFrameworkImpl *, Json::Value &&pJson);
 template <>
-inline HttpRequestPtr toRequest<Json::Value &>(Json::Value &pJson)
+inline HttpRequestPtr toRequest<Json::Value &>(HttpAppFrameworkImpl *app,
+                                               Json::Value &pJson)
 {
-    return toRequest((const Json::Value &)pJson);
+    return toRequest(app, (const Json::Value &)pJson);
 }
 
 template <>
@@ -73,7 +76,15 @@ std::shared_ptr<Json::Value> fromRequest(const HttpRequest &req);
 /// Abstract class for webapp developer to get or set the Http request;
 class HttpRequest
 {
+  protected:
+    HttpAppFrameworkImpl *app_;
+
   public:
+    auto getApp() const
+    {
+        return app_;
+    }
+
     /**
      * @brief This template enables implicit type conversion. For using this
      * template, user must specialize the fromRequest template. For example a
@@ -357,20 +368,21 @@ class HttpRequest
     /// create request objects.
 
     /// Create a normal request with http method Get and version Http1.1.
-    static HttpRequestPtr newHttpRequest();
+    static HttpRequestPtr newHttpRequest(HttpAppFrameworkImpl *);
 
     /// Create a http request with:
     /// Method: Get
     /// Version: Http1.1
     /// Content type: application/json, the @param data is serialized into the
     /// content of the request.
-    static HttpRequestPtr newHttpJsonRequest(const Json::Value &data);
+    static HttpRequestPtr newHttpJsonRequest(HttpAppFrameworkImpl *,
+                                             const Json::Value &data);
 
     /// Create a http request with:
     /// Method: Post
     /// Version: Http1.1
     /// Content type: application/x-www-form-urlencoded
-    static HttpRequestPtr newHttpFormPostRequest();
+    static HttpRequestPtr newHttpFormPostRequest(HttpAppFrameworkImpl *);
 
     /// Create a http file upload request with:
     /// Method: Post
@@ -379,6 +391,7 @@ class HttpRequest
     /// The @param files represents pload files which are transferred to the
     /// server via the multipart/form-data format
     static HttpRequestPtr newFileUploadRequest(
+        HttpAppFrameworkImpl *,
         const std::vector<UploadFile> &files);
 
     /**
@@ -386,9 +399,10 @@ class HttpRequest
      * users must specialize the toRequest template.
      */
     template <typename T>
-    static HttpRequestPtr newCustomHttpRequest(T &&obj)
+    static HttpRequestPtr newCustomHttpRequest(HttpAppFrameworkImpl *app,
+                                               T &&obj)
     {
-        return toRequest(std::forward<T>(obj));
+        return toRequest(app, std::forward<T>(obj));
     }
 
     virtual bool isOnSecureConnection() const noexcept = 0;
@@ -399,15 +413,16 @@ class HttpRequest
 };
 
 template <>
-inline HttpRequestPtr toRequest<const Json::Value &>(const Json::Value &pJson)
+inline HttpRequestPtr toRequest<const Json::Value &>(HttpAppFrameworkImpl *app,
+                                                     const Json::Value &pJson)
 {
-    return HttpRequest::newHttpJsonRequest(pJson);
+    return HttpRequest::newHttpJsonRequest(app, pJson);
 }
 
 template <>
-inline HttpRequestPtr toRequest(Json::Value &&pJson)
+inline HttpRequestPtr toRequest(HttpAppFrameworkImpl *app, Json::Value &&pJson)
 {
-    return HttpRequest::newHttpJsonRequest(std::move(pJson));
+    return HttpRequest::newHttpJsonRequest(app, std::move(pJson));
 }
 
 template <>

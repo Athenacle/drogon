@@ -7,7 +7,8 @@ void ListParaCtl::asyncHandleHttpRequest(
     HttpViewData data;
     data.insert("title", "list parameters");
     data.insert("parameters", req->getParameters());
-    auto res =
-        drogon::HttpResponse::newHttpViewResponse("ListParaView.csp", data);
+    auto res = drogon::HttpResponse::newHttpViewResponse(req->getApp(),
+                                                         "ListParaView.csp",
+                                                         data);
     callback(res);
 }

@@ -66,26 +66,29 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : staticFileRouterPtr_(new StaticFileRouter{}),
-      httpCtrlsRouterPtr_(new HttpControllersRouter(*staticFileRouterPtr_,
+    : staticFileRouterPtr_(new StaticFileRouter(this)),
+      httpCtrlsRouterPtr_(new HttpControllersRouter(this,
+                                                    *staticFileRouterPtr_,
                                                     postRoutingAdvices_,
                                                     postRoutingObservers_,
                                                     preHandlingAdvices_,
                                                     preHandlingObservers_,
                                                     postHandlingAdvices_)),
       httpSimpleCtrlsRouterPtr_(
-          new HttpSimpleControllersRouter(*httpCtrlsRouterPtr_,
+          new HttpSimpleControllersRouter(this,
+                                          *httpCtrlsRouterPtr_,
                                           postRoutingAdvices_,
                                           postRoutingObservers_,
                                           preHandlingAdvices_,
                                           preHandlingObservers_,
                                           postHandlingAdvices_)),
       websockCtrlsRouterPtr_(
-          new WebsocketControllersRouter(postRoutingAdvices_,
+          new WebsocketControllersRouter(this,
+                                         postRoutingAdvices_,
                                          postRoutingObservers_)),
-      listenerManagerPtr_(new ListenerManager),
+      listenerManagerPtr_(new ListenerManager(this)),
       pluginsManagerPtr_(new PluginsManager),
-      dbClientManagerPtr_(new orm::DbClientManager),
+      dbClientManagerPtr_(new orm::DbClientManager(this)),
       uploadPath_(rootPath_ + "uploads")
 {
 }
@@ -96,7 +99,8 @@ static std::function<void()> f = [] {
 
 /// Make sure that the main event loop is initialized in the main thread.
 drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::initFirst_([]() {
-    HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
+    // FIXME: change this
+    // HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
 });
 
 namespace drogon
@@ -159,7 +163,8 @@ static void TERMFunction(int sig)
     if (sig == SIGTERM)
     {
         LOG_WARN << "SIGTERM signal received.";
-        HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+        // FIXME: SIGTERM handler
+        // HttpAppFrameworkImpl::instance().getTermSignalHandler()();
     }
 }
 
@@ -350,21 +355,21 @@ HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNumPerIP(
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigFile(
     const std::string &fileName)
 {
-    ConfigLoader loader(fileName);
+    ConfigLoader loader(this, fileName);
     loader.load();
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(const Json::Value &data)
 {
-    ConfigLoader loader(data);
+    ConfigLoader loader(this, data);
     loader.load();
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
 {
-    ConfigLoader loader(std::move(data));
+    ConfigLoader loader(this, std::move(data));
     loader.load();
     jsonConfig_ = loader.jsonValue();
     return *this;
@@ -415,6 +420,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
 
 void HttpAppFrameworkImpl::run()
 {
+    HttpAppFrameworkManager::instance().registerAutoCreationHandlers(this);
+
     if (!getLoop()->isInLoopThread())
     {
         getLoop()->moveToCurrentThread();
@@ -793,7 +800,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     LOG_TRACE << "http path=" << req->path();
     if (req->method() == Options && (req->path() == "*" || req->path() == "/*"))
     {
-        auto resp = HttpResponse::newHttpResponse();
+        auto resp = HttpResponse::newHttpResponse(this);
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
         resp->setExpiredTime(0);
@@ -844,9 +851,9 @@ trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
     return listenerManagerPtr_->getIOLoop(id);
 }
 
-HttpAppFramework &HttpAppFramework::instance()
+HttpAppFrameworkImpl *HttpAppFramework::create()
 {
-    return HttpAppFrameworkImpl::instance();
+    return new HttpAppFrameworkImpl;
 }
 
 HttpAppFramework::~HttpAppFramework()
@@ -899,8 +906,8 @@ void HttpAppFrameworkImpl::forward(
         req->setPassThrough(true);
         clientPtr->sendRequest(
             req,
-            [callback = std::move(callback)](ReqResult result,
-                                             const HttpResponsePtr &resp) {
+            [callback = std::move(callback),
+             this](ReqResult result, const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
                     resp->setPassThrough(true);
@@ -908,7 +915,7 @@ void HttpAppFrameworkImpl::forward(
                 }
                 else
                 {
-                    callback(HttpResponse::newNotFoundResponse());
+                    callback(HttpResponse::newNotFoundResponse(this));
                 }
             },
             timeout);
@@ -969,10 +976,10 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
         return custom404_;
     }
     auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
-    if (loop && loop->index() < app().getThreadNum())
+    if (loop && loop->index() < getThreadNum())
     {
         // If the current thread is an IO thread
-        static IOThreadStorage<HttpResponsePtr> thread404Pages;
+        static IOThreadStorage<HttpResponsePtr> thread404Pages(this);
         static std::once_flag once;
         std::call_once(once, [this] {
             thread404Pages.init([this](HttpResponsePtr &resp, size_t index) {
@@ -1036,4 +1043,13 @@ const std::function<HttpResponsePtr(HttpStatusCode)>
 std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 {
     return listenerManagerPtr_->getListeners();
+}
+
+void HttpAppFrameworkManager::registerAutoCreationHandlers(
+    HttpAppFramework *app)
+{
+    for (const auto &fun : autoCreationHandlerRegistor_)
+    {
+        fun(app);
+    }
 }

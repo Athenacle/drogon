@@ -19,7 +19,7 @@ void CustomHeaderFilter::doFilter(const HttpRequestPtr &req,
         return;
     }
     // Check failed
-    auto res = drogon::HttpResponse::newHttpResponse();
+    auto res = drogon::HttpResponse::newHttpResponse(req->getApp());
     res->setStatusCode(k500InternalServerError);
     fcb(res);
 }

@@ -13,6 +13,7 @@
  */
 
 #include "../../lib/src/DbClientManager.h"
+#include "../../lib/src/HttpAppFrameworkImpl.h"
 #include "DbClientLockFree.h"
 #include <drogon/config.h>
 #include <drogon/HttpAppFramework.h>
@@ -60,9 +61,11 @@ void DbClientManager::createDbClients(
                 dbInfo.dbType_ == drogon::orm::ClientType::Mysql)
             {
                 dbFastClientsMap_[dbInfo.name_] =
-                    IOThreadStorage<orm::DbClientPtr>();
-                dbFastClientsMap_[dbInfo.name_].init([&](orm::DbClientPtr &c,
-                                                         size_t idx) {
+                    std::unique_ptr<IOThreadStorage<orm::DbClientPtr>>(
+                        new IOThreadStorage<orm::DbClientPtr>(
+                            reinterpret_cast<HttpAppFramework *>(app_)));
+                dbFastClientsMap_[dbInfo.name_]->init([&](orm::DbClientPtr &c,
+                                                          size_t idx) {
                     assert(idx == ioloops[idx]->index());
                     LOG_TRACE << "create fast database client for the thread "
                               << idx;
@@ -191,11 +194,11 @@ bool DbClientManager::areAllDbClientsAvailable() const noexcept
             return false;
     }
     auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
-    if (loop && loop->index() < app().getThreadNum())
+    if (loop && loop->index() < app_->getThreadNum())
     {
         for (auto const &pair : dbFastClientsMap_)
         {
-            if (!(*(pair.second))->hasAvailableConnections())
+            if (!(**(pair.second))->hasAvailableConnections())
                 return false;
         }
     }

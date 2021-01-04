@@ -6,13 +6,15 @@
 using namespace drogon;
 int main()
 {
+    auto app = drogon::create();
+
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
-    auto client = HttpClient::newHttpClient("127.0.0.1", 8848);
+    auto client = HttpClient::newHttpClient("127.0.0.1", 8848, app);
     client->setPipeliningDepth(64);
     int counter = -1;
     int n = 0;
 
-    auto request1 = HttpRequest::newHttpRequest();
+    auto request1 = HttpRequest::newHttpRequest(nullptr);
     request1->setPath("/pipe");
     request1->setMethod(Head);
 
@@ -45,7 +47,7 @@ int main()
             }
         });
 
-    auto request2 = HttpRequest::newHttpRequest();
+    auto request2 = HttpRequest::newHttpRequest(app);
     request2->setPath("/drogon.jpg");
     client->sendRequest(request2, [](ReqResult r, const HttpResponsePtr &resp) {
         if (r == ReqResult::Ok)
@@ -62,12 +64,13 @@ int main()
         }
     });
 
-    auto request = HttpRequest::newHttpRequest();
+    auto request = HttpRequest::newHttpRequest(nullptr);
     request->setPath("/pipe");
     for (int i = 0; i < 19; ++i)
     {
         client->sendRequest(
-            request, [&counter, &n](ReqResult r, const HttpResponsePtr &resp) {
+            request,
+            [&counter, &n, app](ReqResult r, const HttpResponsePtr &resp) {
                 if (r == ReqResult::Ok)
                 {
                     auto counterHeader = resp->getHeader("counter");
@@ -85,7 +88,9 @@ int main()
                         if (n == 20)
                         {
                             LOG_DEBUG << "Good!";
-                            app().getLoop()->quit();
+                            reinterpret_cast<HttpAppFramework *>(app)
+                                ->getLoop()
+                                ->quit();
                         }
                     }
                     if (resp->getBody().length() == 0)
@@ -100,5 +105,5 @@ int main()
                 }
             });
     }
-    app().run();
+    reinterpret_cast<HttpAppFramework *>(app)->run();
 }

@@ -24,10 +24,15 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
+
 class HttpServer : trantor::NonCopyable
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
-    HttpServer(trantor::EventLoop *loop,
+    HttpServer(HttpAppFrameworkImpl *app,
+               trantor::EventLoop *loop,
                const trantor::InetAddress &listenAddr,
                const std::string &name,
                const std::vector<

@@ -29,7 +29,7 @@ void SecureSSLRedirector::initAndStart(const Json::Value &config)
         }
     }
     secureHost_ = config.get("secure_ssl_host", "").asString();
-    app().registerSyncAdvice([this](const HttpRequestPtr &req) {
+    app_->registerSyncAdvice([this](const HttpRequestPtr &req) {
         return this->redirectingAdvice(req);
     });
 }
@@ -75,7 +75,7 @@ HttpResponsePtr SecureSSLRedirector::redirectToSSL(
         {
             query += "?" + req->query();
         }
-        return HttpResponse::newRedirectionResponse(query);
+        return HttpResponse::newRedirectionResponse(req->getApp(), query);
     }
     else
     {
@@ -88,11 +88,11 @@ HttpResponsePtr SecureSSLRedirector::redirectToSSL(
             {
                 query += "?" + req->query();
             }
-            return HttpResponse::newRedirectionResponse(query);
+            return HttpResponse::newRedirectionResponse(req->getApp(), query);
         }
         else
         {
-            return HttpResponse::newNotFoundResponse();
+            return HttpResponse::newNotFoundResponse(req->getApp());
         }
     }
 }

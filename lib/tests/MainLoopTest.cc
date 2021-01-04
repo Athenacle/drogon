@@ -3,10 +3,10 @@
 
 int main()
 {
-    std::thread([]() {
-        drogon::app().getLoop()->runEvery(1, []() {
-            std::cout << "!" << std::endl;
-        });
+    auto app = reinterpret_cast<drogon::HttpAppFramework*>(drogon::create());
+
+    std::thread([app]() {
+        app->getLoop()->runEvery(1, []() { std::cout << "!" << std::endl; });
     }).detach();
-    drogon::app().run();
+    app->run();
 }

@@ -4,15 +4,16 @@ using namespace api::v1;
 void ApiTest::rootGet(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto res = HttpResponse::newHttpResponse();
+    auto res = HttpResponse::newHttpResponse(req->getApp());
     res->setBody("ROOT Get!!!");
     callback(res);
 }
 void ApiTest::rootPost(const HttpRequestPtr &req,
                        std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    std::thread([callback = std::move(callback)]() {
-        auto res = HttpResponse::newHttpResponse();
+    auto app = req->getApp();
+    std::thread([callback = std::move(callback), app]() {
+        auto res = HttpResponse::newHttpResponse(app);
         res->setBody("ROOT Post!!!");
         callback(res);
     }).detach();
@@ -28,7 +29,9 @@ void ApiTest::get(const HttpRequestPtr &req,
     para["p1"] = std::to_string(p1);
     para["p2"] = p2;
     data.insert("parameters", para);
-    auto res = HttpResponse::newHttpViewResponse("ListParaView.csp", data);
+    auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                 "ListParaView.csp",
+                                                 data);
     callback(res);
 }
 
@@ -48,13 +51,14 @@ void ApiTest::your_method_name(
         "<script>alert(\" This should not be displayed in a browser alert "
         "box.\");</script>"));
     data.insert("parameters", para);
-    auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+    auto res =
+        HttpResponse::newHttpViewResponse(req->getApp(), "ListParaView", data);
     callback(res);
 }
 void ApiTest::staticApi(const HttpRequestPtr &req,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto resp = HttpResponse::newHttpResponse();
+    auto resp = HttpResponse::newHttpResponse(req->getApp());
     resp->setBody("staticApi,hello!!");
     resp->setExpiredTime(0);  // cache the response forever;
     callback(resp);
@@ -65,7 +69,7 @@ void ApiTest::get2(const HttpRequestPtr &req,
                    std::string &&p1)
 {
     // test gzip feature
-    auto res = HttpResponse::newHttpResponse();
+    auto res = HttpResponse::newHttpResponse(req->getApp());
     res->setBody(
         "Applications\n"
         "Developer\n"
@@ -386,7 +390,8 @@ void ApiTest::jsonTest(std::shared_ptr<Json::Value> &&json,
     {
         ret["result"] = "bad";
     }
-    auto resp = HttpResponse::newCustomHttpResponse(ret);
+    LOG_ERROR << "not-implemented";
+    auto resp = HttpResponse::newCustomHttpResponse(nullptr, ret);
     callback(resp);
 }
 
@@ -407,7 +412,7 @@ void ApiTest::formTest(const HttpRequestPtr &req,
     {
         ret["result"] = "bad";
     }
-    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    auto resp = HttpResponse::newHttpJsonResponse(req->getApp(), ret);
     callback(resp);
 }
 
@@ -424,7 +429,7 @@ void ApiTest::attributesTest(
     if (attributes->find(key))
     {
         ret["result"] = "bad";
-        callback(HttpResponse::newHttpJsonResponse(ret));
+        callback(HttpResponse::newHttpJsonResponse(req->getApp(), ret));
         return;
     }
 
@@ -439,7 +444,7 @@ void ApiTest::attributesTest(
         ret["result"] = "ok";
     }
 
-    callback(HttpResponse::newHttpJsonResponse(ret));
+    callback(HttpResponse::newHttpJsonResponse(req->getApp(), ret));
     return;
 }
 
@@ -451,6 +456,7 @@ void ApiTest::regexTest(const HttpRequestPtr &req,
     Json::Value ret;
     ret["p1"] = p1;
     ret["p2"] = std::move(p2);
-    auto resp = HttpResponse::newHttpJsonResponse(std::move(ret));
+    auto resp =
+        HttpResponse::newHttpJsonResponse(req->getApp(), std::move(ret));
     callback(resp);
 }

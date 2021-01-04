@@ -21,10 +21,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#define PATH_LIST_BEGIN           \
-    static void initPathRouting() \
+#define PATH_LIST_BEGIN                                        \
+    static void initPathRouting(drogon::HttpAppFramework *app) \
     {
-#define PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__});
+#define PATH_ADD(path, ...) registerSelf__(app, path, {__VA_ARGS__});
 #define PATH_LIST_END }
 namespace drogon
 {
@@ -60,6 +60,8 @@ class HttpSimpleControllerBase : public virtual DrObjectBase
 template <typename T, bool AutoCreation = true>
 class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
     static const bool isAutoCreation = AutoCreation;
     virtual ~HttpSimpleController()
@@ -67,17 +69,18 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
     }
 
   protected:
-    HttpSimpleController()
+    HttpSimpleController(HttpAppFrameworkImpl *app = nullptr) : app_(app)
     {
     }
     static void registerSelf__(
+        HttpAppFramework *app,
         const std::string &path,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
     {
         LOG_TRACE << "register simple controller("
                   << HttpSimpleController<T>::classTypeName()
                   << ") on path:" << path;
-        app().registerHttpSimpleController(
+        app->registerHttpSimpleController(
             path, HttpSimpleController<T>::classTypeName(), filtersAndMethods);
     }
 
@@ -89,7 +92,8 @@ class HttpSimpleController : public DrObject<T>, public HttpSimpleControllerBase
         {
             if (AutoCreation)
             {
-                T::initPathRouting();
+                HttpAppFrameworkManager::instance().pushAutoCreationFunction(
+                    [](HttpAppFramework *app) { T::initPathRouting(app); });
             }
         }
     };

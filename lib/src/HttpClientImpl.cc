@@ -538,26 +538,30 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         uint16_t port,
+                                        HttpAppFrameworkImpl *app,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
-        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
+        loop == nullptr ? app->getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
         useOldTLS);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
+                                        HttpAppFrameworkImpl *app,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS)
 {
-    return std::make_shared<HttpClientImpl>(
-        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
-        hostString,
-        useOldTLS);
+    auto ret = std::make_shared<HttpClientImpl>(loop == nullptr ? app->getLoop()
+                                                                : loop,
+                                                hostString,
+                                                useOldTLS);
+    ret->app_ = app;
+    return ret;
 }
 
 void HttpClientImpl::onError(ReqResult result)

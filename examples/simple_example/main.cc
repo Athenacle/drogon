@@ -28,7 +28,9 @@ class A : public DrObjectBase
         para["int p4"] = std::to_string(p4);
 
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                     "ListParaView",
+                                                     data);
         callback(res);
     }
     static void staticHandle(
@@ -48,7 +50,9 @@ class A : public DrObjectBase
         para["int p4"] = std::to_string(p4);
 
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                     "ListParaView",
+                                                     data);
         callback(res);
     }
 };
@@ -66,7 +70,9 @@ class B : public DrObjectBase
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                     "ListParaView",
+                                                     data);
         callback(res);
     }
 };
@@ -80,7 +86,7 @@ class C : public drogon::HttpController<C>
     void priv(const HttpRequestPtr &req,
               std::function<void(const HttpResponsePtr &)> &&callback) const
     {
-        auto resp = HttpResponse::newHttpResponse();
+        auto resp = HttpResponse::newHttpResponse(req->getApp());
         resp->setBody("<P>private content, only for authenticated users</P>");
         callback(resp);
     }
@@ -112,7 +118,9 @@ class Test : public HttpController<Test>
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                     "ListParaView",
+                                                     data);
         callback(res);
     }
     void list(const HttpRequestPtr &req,
@@ -126,7 +134,9 @@ class Test : public HttpController<Test>
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                     "ListParaView",
+                                                     data);
         callback(res);
     }
 };
@@ -149,23 +159,23 @@ string_view fromRequest(const HttpRequest &req)
 /// practice, we don't need such a lengthy main function.
 int main()
 {
+    auto app = reinterpret_cast<HttpAppFramework *>(drogon::create());
     std::cout << banner << std::endl;
     // app().addListener("::1", 8848); //ipv6
-    app().addListener("0.0.0.0", 8848);
+    app->addListener("0.0.0.0", 8848);
     // https
-    if (app().supportSSL())
+    if (app->supportSSL())
     {
-        drogon::app()
-            .setSSLFiles("server.pem", "server.pem")
+        app->setSSLFiles("server.pem", "server.pem")
             .addListener("0.0.0.0", 8849, true);
     }
     // Class function example
-    app().registerHandler("/api/v1/handle1/{}/{}/?p3={}&p4={}", &A::handle);
-    app().registerHandler(
+    app->registerHandler("/api/v1/handle1/{}/{}/?p3={}&p4={}", &A::handle);
+    app->registerHandler(
         "/api/v1/handle11/{int p1}/{string p2}/?p3={string p3}&p4={int p4}",
         &A::staticHandle);
     // Lambda example
-    app().registerHandler(
+    app->registerHandler(
         "/api/v1/handle2/{int a}/{float b}",
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback,
@@ -185,7 +195,9 @@ int main()
             para["a"] = std::to_string(a);
             para["b"] = std::to_string(b);
             data.insert("parameters", para);
-            auto res = HttpResponse::newHttpViewResponse("ListParaView", data);
+            auto res = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                         "ListParaView",
+                                                         data);
             callback(res);
             LOG_DEBUG << body.data();
             assert(!jsonPtr);
@@ -193,7 +205,7 @@ int main()
 
     // Functor example
     B b;
-    app().registerHandler("/api/v1/handle3/{1}/{2}", b);
+    app->registerHandler("/api/v1/handle3/{1}/{2}", b);
 
     // API example for std::function
     A tmp;
@@ -204,19 +216,19 @@ int main()
                        const std::string &,
                        int)>
         func = std::bind(&A::handle, &tmp, _1, _2, _3, _4, _5, _6);
-    app().registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
+    app->registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
 
-    app().setDocumentRoot("./");
-    app().enableSession(60);
+    app->setDocumentRoot("./");
+    app->enableSession(60);
 
     std::map<std::string, std::string> config_credentials;
     std::string realm("drogonRealm");
     std::string opaque("drogonOpaque");
     // Load configuration
-    app().loadConfigFile("config.example.json");
-    app().setImplicitPageEnable(true);
-    app().setImplicitPage("page.html");
-    auto &json = app().getCustomConfig();
+    app->loadConfigFile("config.example.json");
+    app->setImplicitPageEnable(true);
+    app->setImplicitPage("page.html");
+    auto &json = app->getCustomConfig();
     if (json.empty())
     {
         std::cout << "empty custom config!" << std::endl;
@@ -241,36 +253,36 @@ int main()
     // used by C HttpController (/C/priv/resource)
     auto auth_filter =
         std::make_shared<DigestAuthFilter>(config_credentials, realm, opaque);
-    app().registerFilter(auth_filter);
+    app->registerFilter(auth_filter);
 
     // Install custom controller
     auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
-    app().registerController(ctrlPtr);
+    app->registerController(ctrlPtr);
 
     // Install custom filter
     auto filterPtr =
         std::make_shared<CustomHeaderFilter>("custom_header", "yes");
-    app().registerFilter(filterPtr);
-    app().setIdleConnectionTimeout(30s);
+    app->registerFilter(filterPtr);
+    app->setIdleConnectionTimeout(30s);
 
     // AOP example
-    app().registerBeginningAdvice(
+    app->registerBeginningAdvice(
         []() { LOG_DEBUG << "Event loop is running!"; });
-    app().registerNewConnectionAdvice([](const trantor::InetAddress &peer,
-                                         const trantor::InetAddress &local) {
+    app->registerNewConnectionAdvice([](const trantor::InetAddress &peer,
+                                        const trantor::InetAddress &local) {
         LOG_DEBUG << "New connection: " << peer.toIpPort() << "-->"
                   << local.toIpPort();
         return true;
     });
-    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
-                                      drogon::AdviceCallback &&acb,
-                                      drogon::AdviceChainCallback &&accb) {
+    app->registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                     drogon::AdviceCallback &&acb,
+                                     drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "preRouting1";
         accb();
     });
-    app().registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req,
-                                       drogon::AdviceCallback &&acb,
-                                       drogon::AdviceChainCallback &&accb) {
+    app->registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                      drogon::AdviceCallback &&acb,
+                                      drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "postRouting1";
         LOG_DEBUG << "Matched path=" << req->matchedPathPatternData();
         for (auto &cookie : req->cookies())
@@ -279,40 +291,42 @@ int main()
         }
         accb();
     });
-    app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req,
-                                       drogon::AdviceCallback &&acb,
-                                       drogon::AdviceChainCallback &&accb) {
+    app->registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req,
+                                      drogon::AdviceCallback &&acb,
+                                      drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "preHandling1";
         accb();
     });
-    app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &,
-                                        const drogon::HttpResponsePtr &resp) {
+    app->registerPostHandlingAdvice([](const drogon::HttpRequestPtr &,
+                                       const drogon::HttpResponsePtr &resp) {
         LOG_DEBUG << "postHandling1";
         resp->addHeader("Access-Control-Allow-Origin", "*");
     });
-    app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req) {
+    app->registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req) {
         LOG_DEBUG << "preRouting observer";
     });
-    app().registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req) {
+    app->registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req) {
         LOG_DEBUG << "postRouting observer";
     });
-    app().registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req) {
+    app->registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req) {
         LOG_DEBUG << "preHanding observer";
     });
-    app().registerSyncAdvice([](const HttpRequestPtr &req) -> HttpResponsePtr {
-        static const HttpResponsePtr nullResp;
-        if (req->path() == "/plaintext")
-        {
-            auto resp = HttpResponse::newHttpResponse();
-            resp->setBody("Hello, World!");
-            resp->setContentTypeCodeAndCustomString(
-                CT_TEXT_PLAIN, "Content-Type: text/plain\r\n");
-            return resp;
-        }
-        return nullResp;
-    });
+    app->registerSyncAdvice(
+        [app](const HttpRequestPtr &req) -> HttpResponsePtr {
+            static const HttpResponsePtr nullResp;
+            if (req->path() == "/plaintext")
+            {
+                auto resp = HttpResponse::newHttpResponse(
+                    reinterpret_cast<HttpAppFrameworkImpl *>(app));
+                resp->setBody("Hello, World!");
+                resp->setContentTypeCodeAndCustomString(
+                    CT_TEXT_PLAIN, "Content-Type: text/plain\r\n");
+                return resp;
+            }
+            return nullResp;
+        });
     // Output information of all handlers
-    auto handlerInfo = app().getHandlersInfo();
+    auto handlerInfo = app->getHandlersInfo();
     for (auto &info : handlerInfo)
     {
         std::cout << std::get<0>(info);
@@ -344,12 +358,13 @@ int main()
         }
         std::cout << std::get<2>(info) << std::endl;
     }
-    auto resp = HttpResponse::newFileResponse("index.html");
+    auto resp = HttpResponse::newFileResponse(
+        reinterpret_cast<HttpAppFrameworkImpl *>(app), "index.html");
     resp->setExpiredTime(0);
-    app().setCustom404Page(resp);
-    app().addListener("0.0.0.0", 0);
-    app().registerBeginningAdvice([]() {
-        auto addresses = app().getListeners();
+    app->setCustom404Page(resp);
+    app->addListener("0.0.0.0", 0);
+    app->registerBeginningAdvice([app]() {
+        auto addresses = app->getListeners();
         for (auto &address : addresses)
         {
             LOG_INFO << address.toIpPort() << " LISTEN";
@@ -359,5 +374,5 @@ int main()
               << std::string{drogon::utils::getHttpFullDate(
                      trantor::Date::now())}
               << std::endl;
-    app().run();
+    app->run();
 }

@@ -9,6 +9,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
 {
   public:
     METHOD_LIST_BEGIN
+
     // use METHOD_ADD to add your custom processing function here;
     METHOD_ADD(ApiTest::rootGet,
                "",
@@ -71,7 +72,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
     void shutdown(const HttpRequestPtr &req,
                   std::function<void(const HttpResponsePtr &)> &&callback)
     {
-        app().quit();
+        reinterpret_cast<HttpAppFramework *>(req->getApp())->quit();
     }
 
   public:

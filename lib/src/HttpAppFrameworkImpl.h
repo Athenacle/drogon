@@ -463,11 +463,12 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         const bool isFast = false,
         const std::string &characterSet = "") override;
     virtual std::vector<trantor::InetAddress> getListeners() const override;
-    inline static HttpAppFrameworkImpl &instance()
-    {
-        static HttpAppFrameworkImpl instance;
-        return instance;
-    }
+    // TODO: REMOVE
+    // inline static HttpAppFrameworkImpl &instance()
+    // {
+    //     static HttpAppFrameworkImpl instance;
+    //     return instance;
+    // }
     bool useSendfile()
     {
         return useSendfile_;
@@ -600,7 +601,7 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     size_t clientMaxMemoryBodySize_{64 * 1024};
     size_t clientMaxWebSocketMessageSize_{128 * 1024};
     std::string homePageFile_{"index.html"};
-    std::function<void()> termSignalHandler_{[]() { app().quit(); }};
+    std::function<void()> termSignalHandler_{[this]() { this->quit(); }};
     std::unique_ptr<SessionManager> sessionManagerPtr_;
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;

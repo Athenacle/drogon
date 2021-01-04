@@ -5,6 +5,6 @@ void JsonCtrl::asyncHandleHttpRequest(
 {
     Json::Value ret;
     ret["message"] = "Hello, World!";
-    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    auto resp = HttpResponse::newHttpJsonResponse(req->getApp(), ret);
     callback(resp);
 }

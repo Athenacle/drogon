@@ -20,12 +20,14 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 class ConfigLoader : public trantor::NonCopyable
 {
   public:
-    explicit ConfigLoader(const std::string &configFile);
-    explicit ConfigLoader(const Json::Value &data);
-    explicit ConfigLoader(Json::Value &&data);
+    explicit ConfigLoader(HttpAppFrameworkImpl *app,
+                          const std::string &configFile);
+    explicit ConfigLoader(HttpAppFrameworkImpl *app, const Json::Value &data);
+    explicit ConfigLoader(HttpAppFrameworkImpl *app, Json::Value &&data);
     ~ConfigLoader();
     const Json::Value &jsonValue() const
     {
@@ -34,6 +36,7 @@ class ConfigLoader : public trantor::NonCopyable
     void load();
 
   private:
+    HttpAppFrameworkImpl *app_;
     std::string configFile_;
     Json::Value configJsonRoot_;
 };

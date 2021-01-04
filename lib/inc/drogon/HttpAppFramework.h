@@ -60,14 +60,8 @@ class HttpAppFramework : public trantor::NonCopyable
 {
   public:
     virtual ~HttpAppFramework();
-    /// Get the instance of HttpAppFramework
-    /**
-     * HttpAppFramework works at singleton mode, so any calling of this
-     * method gets the same instance;
-     * Calling drogon::HttpAppFramework::instance()
-     * can be replaced by a simple interface -- drogon::app()
-     */
-    static HttpAppFramework &instance();
+
+    static HttpAppFrameworkImpl *create();
 
     /// Run the event loop
     /**
@@ -551,7 +545,7 @@ class HttpAppFramework : public trantor::NonCopyable
                       "automatically by drogon cannot be "
                       "registered here");
         DrClassMap::setSingleInstance(ctrlPtr);
-        T::initPathRouting();
+        T::initPathRouting(this);
         return *this;
     }
 
@@ -1261,10 +1255,30 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::string &handlerName) = 0;
 };
 
-/// A wrapper of the instance() method
-inline HttpAppFramework &app()
+class HttpAppFrameworkManager
 {
-    return HttpAppFramework::instance();
+    std::vector<std::function<void(HttpAppFramework *)>>
+        autoCreationHandlerRegistor_;
+    HttpAppFrameworkManager() = default;
+    ~HttpAppFrameworkManager() = default;
+
+  public:
+    static HttpAppFrameworkManager &instance()
+    {
+        static HttpAppFrameworkManager manager;
+        return manager;
+    }
+    void pushAutoCreationFunction(
+        const std::function<void(HttpAppFramework *)> &func)
+    {
+        autoCreationHandlerRegistor_.emplace_back(func);
+    }
+    void registerAutoCreationHandlers(HttpAppFramework *app);
+};
+
+inline HttpAppFrameworkImpl *create()
+{
+    return HttpAppFramework::create();
 }
 
 }  // namespace drogon

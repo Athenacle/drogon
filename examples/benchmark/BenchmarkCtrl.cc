@@ -4,7 +4,7 @@ void BenchmarkCtrl::asyncHandleHttpRequest(
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     // write your application logic here
-    auto resp = HttpResponse::newHttpResponse();
+    auto resp = HttpResponse::newHttpResponse(req->getApp());
     resp->setBody("<p>Hello, world!</p>");
     resp->setExpiredTime(0);
     callback(resp);

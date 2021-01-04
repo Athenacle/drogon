@@ -26,6 +26,7 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 class HttpClient;
 using HttpClientPtr = std::shared_ptr<HttpClient>;
 
@@ -169,6 +170,7 @@ class HttpClient : public trantor::NonCopyable
      */
     static HttpClientPtr newHttpClient(const std::string &ip,
                                        uint16_t port,
+                                       HttpAppFrameworkImpl *app,
                                        bool useSSL = false,
                                        trantor::EventLoop *loop = nullptr,
                                        bool useOldTLS = false);
@@ -208,6 +210,7 @@ class HttpClient : public trantor::NonCopyable
      *
      */
     static HttpClientPtr newHttpClient(const std::string &hostString,
+                                       HttpAppFrameworkImpl *app,
                                        trantor::EventLoop *loop = nullptr,
                                        bool useOldTLS = false);
 
@@ -215,7 +218,13 @@ class HttpClient : public trantor::NonCopyable
     {
     }
 
+    HttpAppFrameworkImpl *getApp() const
+    {
+        return app_;
+    }
+
   protected:
+    HttpAppFrameworkImpl *app_;
     HttpClient() = default;
 };
 

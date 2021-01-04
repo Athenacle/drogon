@@ -8,13 +8,12 @@
  */
 int main()
 {
-    std::thread([]() {
-        drogon::app().getLoop()->runEvery(1, []() {
-            std::cout << "!" << std::endl;
-        });
+    auto app = reinterpret_cast<drogon::HttpAppFramework*>(drogon::create());
+    std::thread([app]() {
+        app->getLoop()->runEvery(1, []() { std::cout << "!" << std::endl; });
     }).detach();
 
-    std::thread l([]() { drogon::app().run(); });
+    std::thread l([app]() { app->run(); });
     std::this_thread::sleep_for(std::chrono::seconds(1));
     trantor::EventLoop loop;
     l.join();

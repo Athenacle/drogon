@@ -154,7 +154,7 @@ void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
     if (!req->session())
     {
         // no session support by framework,pls enable session
-        auto resp = HttpResponse::newNotFoundResponse();
+        auto resp = HttpResponse::newNotFoundResponse(req->getApp());
         cb(resp);
         return;
     }
@@ -206,7 +206,7 @@ void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
         }
     }
     // not Passed
-    auto resp = HttpResponse::newHttpResponse();
+    auto resp = HttpResponse::newHttpResponse(req->getApp());
     resp->setStatusCode(k401Unauthorized);
     resp->addHeader("WWW-Authenticate",
                     " Digest realm=\"" + realm + "\", nonce=\"" +

@@ -8,7 +8,7 @@ void TestController::asyncHandleHttpRequest(
     LOG_WARN << req->matchedPathPatternData();
     LOG_DEBUG << "index=" << threadIndex_.getThreadData();
     ++(threadIndex_.getThreadData());
-    auto resp = HttpResponse::newHttpResponse();
+    auto resp = HttpResponse::newHttpResponse(req->getApp());
     resp->setContentTypeCodeAndCustomString(CT_TEXT_PLAIN,
                                             "Content-Type: plaintext\r\n");
     resp->setBody("<p>Hello, world!</p>");

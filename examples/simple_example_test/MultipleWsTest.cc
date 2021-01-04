@@ -10,12 +10,14 @@ using namespace std::chrono_literals;
 
 int main(int argc, char *argv[])
 {
+    auto app = drogon::create();
+
     std::array<WebSocketClientPtr, 1000> wsClients;
     for (size_t i = 0; i < wsClients.size(); ++i)
     {
         auto &wsPtr = wsClients[i];
-        wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
-        auto req = HttpRequest::newHttpRequest();
+        wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848, app);
+        auto req = HttpRequest::newHttpRequest(app);
 
         req->setPath("/chat");
         wsPtr->setMessageHandler([](const std::string &message,
@@ -47,5 +49,5 @@ int main(int argc, char *argv[])
                 }
             });
     }
-    app().run();
+    reinterpret_cast<HttpAppFramework *>(app)->run();
 }

@@ -67,7 +67,7 @@ void doTest(const HttpClientPtr &client,
     /// Get cookie
     if (!sessionID)
     {
-        auto req = HttpRequest::newHttpRequest();
+        auto req = HttpRequest::newHttpRequest(client->getApp());
         req->setMethod(drogon::Get);
         req->setPath("/");
         std::promise<int> waitCookie;
@@ -96,16 +96,18 @@ void doTest(const HttpClientPtr &client,
         f.get();
     }
     /// Test session
-    auto req = HttpRequest::newHttpRequest();
+    auto app = client->getApp();
+    auto req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/slow");
     client->sendRequest(
         req,
-        [req, isHttps, client](ReqResult result, const HttpResponsePtr &resp) {
+        [req, isHttps, client, app](ReqResult result,
+                                    const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
             {
                 outputGood(req, isHttps);
-                auto req1 = HttpRequest::newHttpRequest();
+                auto req1 = HttpRequest::newHttpRequest(app);
                 req1->setMethod(drogon::Get);
                 req1->setPath("/slow");
                 client->sendRequest(
@@ -144,7 +146,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
     /// Test gzip
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->addHeader("accept-encoding", "gzip");
     req->setPath("/api/v1/apitest/get/111");
@@ -172,7 +174,7 @@ void doTest(const HttpClientPtr &client,
                         });
 /// Test brotli
 #ifdef USE_BROTLI
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->addHeader("accept-encoding", "br");
     req->setPath("/api/v1/apitest/get/111");
@@ -202,7 +204,7 @@ void doTest(const HttpClientPtr &client,
     /// Post json
     Json::Value json;
     json["request"] = "json";
-    req = HttpRequest::newCustomHttpRequest(json);
+    req = HttpRequest::newCustomHttpRequest(app, json);
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
@@ -229,7 +231,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     // Post json again
-    req = HttpRequest::newHttpJsonRequest(json);
+    req = HttpRequest::newHttpJsonRequest(app, json);
     assert(req->jsonObject());
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/json");
@@ -257,7 +259,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     // Post json again
-    req = HttpRequest::newHttpJsonRequest(json);
+    req = HttpRequest::newHttpJsonRequest(app, json);
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/json");
     client->sendRequest(req,
@@ -285,7 +287,7 @@ void doTest(const HttpClientPtr &client,
                         });
 
     /// 1 Get /
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/");
     client->sendRequest(req,
@@ -311,7 +313,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     /// 3. Post to /tpost to test Http Method constraint
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/tpost");
     client->sendRequest(req,
@@ -337,7 +339,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Post);
     req->setPath("/tpost");
     client->sendRequest(req,
@@ -363,7 +365,7 @@ void doTest(const HttpClientPtr &client,
                         });
 
     /// 4. Http OPTIONS Method
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Options);
     req->setPath("/tpost");
     client->sendRequest(req,
@@ -391,7 +393,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Options);
     req->setPath("/api/v1/apitest");
     client->sendRequest(req,
@@ -419,7 +421,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Options);
     req->setPath("/slow");
     client->sendRequest(req,
@@ -444,7 +446,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Options);
     req->setPath("/*");
     client->sendRequest(
@@ -471,7 +473,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Options);
     req->setPath("/api/v1/apitest/static");
     client->sendRequest(
@@ -498,7 +500,7 @@ void doTest(const HttpClientPtr &client,
         });
 
     /// 4. Test HttpController
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest");
     client->sendRequest(req,
@@ -524,7 +526,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest");
     client->sendRequest(req,
@@ -550,7 +552,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/get/abc/123");
     client->sendRequest(
@@ -578,7 +580,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/3.14/List");
     req->setParameter("P2", "1234");
@@ -609,7 +611,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/reg/123/rest/of/the/path");
     client->sendRequest(
@@ -637,7 +639,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/static");
     client->sendRequest(req,
@@ -665,7 +667,7 @@ void doTest(const HttpClientPtr &client,
 
     // auto loop = app().loop();
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Post);
     req->setPath("/api/v1/apitest/static");
     client->sendRequest(req,
@@ -691,7 +693,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
 
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/get/111");
     client->sendRequest(req,
@@ -718,7 +720,7 @@ void doTest(const HttpClientPtr &client,
                         });
 
     /// Test static function
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/handle11/11/2 2/?p3=3 x");
     req->setParameter("p4", "44");
@@ -755,7 +757,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
     /// Test Incomplete URL
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/handle11/11/2 2/");
     client->sendRequest(
@@ -791,7 +793,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
     /// Test lambda
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/handle2/111/222");
     client->sendRequest(
@@ -821,7 +823,7 @@ void doTest(const HttpClientPtr &client,
         });
 
     /// Test std::bind and std::function
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/handle4/444/333/111");
     client->sendRequest(
@@ -857,7 +859,7 @@ void doTest(const HttpClientPtr &client,
             }
         });
     /// Test gzip_static
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/index.html");
     client->sendRequest(req,
@@ -883,7 +885,7 @@ void doTest(const HttpClientPtr &client,
                                 exit(1);
                             }
                         });
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/index.html");
     req->addHeader("accept-encoding", "gzip");
@@ -910,13 +912,13 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     /// Test file download
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/drogon.jpg");
     client->sendRequest(
         req,
-        [req, client, isHttps, &pro](ReqResult result,
-                                     const HttpResponsePtr &resp) {
+        [req, client, isHttps, &pro, app](ReqResult result,
+                                          const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
             {
                 if (resp->getBody().length() == JPG_LEN)
@@ -925,7 +927,7 @@ void doTest(const HttpClientPtr &client,
                     auto &lastModified = resp->getHeader("last-modified");
                     // LOG_DEBUG << lastModified;
                     // Test 'Not Modified'
-                    auto req = HttpRequest::newHttpRequest();
+                    auto req = HttpRequest::newHttpRequest(app);
                     req->setMethod(drogon::Get);
                     req->setPath("/drogon.jpg");
                     req->addHeader("If-Modified-Since", lastModified);
@@ -970,7 +972,7 @@ void doTest(const HttpClientPtr &client,
 
     /// Test file download, It is forbidden to download files from the
     /// parent folder
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/../../drogon.jpg");
     client->sendRequest(req,
@@ -996,7 +998,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     /// Test controllers created and initialized by users
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setPath("/customctrl/antao");
     req->addHeader("custom_header", "yes");
     client->sendRequest(req,
@@ -1023,7 +1025,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     /// Test controllers created and initialized by users
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setPath("/absolute/123");
     client->sendRequest(req,
                         [req, isHttps](ReqResult result,
@@ -1048,7 +1050,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     /// Test synchronous advice
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setPath("/plaintext");
     client->sendRequest(req,
                         [req, isHttps](ReqResult result,
@@ -1073,7 +1075,7 @@ void doTest(const HttpClientPtr &client,
                             }
                         });
     /// Test form post
-    req = HttpRequest::newHttpFormPostRequest();
+    req = HttpRequest::newHttpFormPostRequest(app);
     req->setPath("/api/v1/apitest/form");
     req->setParameter("k1", "1");
     req->setParameter("k2", "安");
@@ -1103,7 +1105,7 @@ void doTest(const HttpClientPtr &client,
                         });
 
     /// Test attributes
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/v1/apitest/attrs");
     client->sendRequest(req,
@@ -1131,7 +1133,7 @@ void doTest(const HttpClientPtr &client,
                         });
 
     /// Test attachment download
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/api/attachment/download");
     client->sendRequest(req,
@@ -1158,7 +1160,7 @@ void doTest(const HttpClientPtr &client,
                         });
     // Test implicit pages
     std::string body;
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/a-directory");
     client->sendRequest(
@@ -1186,7 +1188,7 @@ void doTest(const HttpClientPtr &client,
                 exit(1);
             }
         });
-    req = HttpRequest::newHttpRequest();
+    req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
     req->setPath("/a-directory/page.html");
     client->sendRequest(req,
@@ -1221,7 +1223,7 @@ void doTest(const HttpClientPtr &client,
     UploadFile file1("./drogon.jpg");
     UploadFile file2("./drogon.jpg", "drogon1.jpg");
     UploadFile file3("./config.example.json", "config.json", "file3");
-    req = HttpRequest::newFileUploadRequest({file1, file2, file3});
+    req = HttpRequest::newFileUploadRequest(app, {file1, file2, file3});
     req->setPath("/api/attachment/upload");
     req->setParameter("P1", "upload");
     req->setParameter("P2", "test");
@@ -1269,6 +1271,7 @@ void loadFileLengths()
 }
 int main(int argc, char *argv[])
 {
+    auto app = HttpAppFramework::create();
     trantor::EventLoopThread loop[2];
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     bool ever = false;
@@ -1281,18 +1284,17 @@ int main(int argc, char *argv[])
     {
         std::promise<int> pro1;
         auto client = HttpClient::newHttpClient("http://127.0.0.1:8848",
+                                                app,
                                                 loop[0].getLoop());
         client->setPipeliningDepth(10);
         if (sessionID)
             client->addCookie(sessionID);
         doTest(client, pro1);
-        if (app().supportSSL())
+        if (reinterpret_cast<HttpAppFramework *>(app)->supportSSL())
         {
             std::promise<int> pro2;
-            auto sslClient = HttpClient::newHttpClient("127.0.0.1",
-                                                       8849,
-                                                       true,
-                                                       loop[1].getLoop());
+            auto sslClient = HttpClient::newHttpClient(
+                "127.0.0.1", 8849, app, true, loop[1].getLoop());
             if (sessionID)
                 sslClient->addCookie(sessionID);
             doTest(sslClient, pro2, true);

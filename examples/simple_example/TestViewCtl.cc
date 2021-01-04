@@ -6,6 +6,8 @@ void TestViewCtl::asyncHandleHttpRequest(
     // write your application logic here
     drogon::HttpViewData data;
     data.insert("title", std::string("TestView"));
-    auto res = drogon::HttpResponse::newHttpViewResponse("TestView", data);
+    auto res = drogon::HttpResponse::newHttpViewResponse(req->getApp(),
+                                                         "TestView",
+                                                         data);
     callback(res);
 }

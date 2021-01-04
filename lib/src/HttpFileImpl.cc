@@ -22,6 +22,7 @@ using namespace drogon;
 
 int HttpFileImpl::save(const std::string &path) const
 {
+    auto app = requestPtr_->getApp();
     assert(!path.empty());
     if (fileName_ == "")
         return -1;
@@ -37,7 +38,7 @@ int HttpFileImpl::save(const std::string &path) const
     }
     else
     {
-        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
+        auto &uploadPath = app->getUploadPath();
         if (uploadPath[uploadPath.length() - 1] == '/')
             tmpPath = uploadPath + path;
         else
@@ -59,7 +60,7 @@ int HttpFileImpl::save(const std::string &path) const
 }
 int HttpFileImpl::save() const
 {
-    return save(HttpAppFrameworkImpl::instance().getUploadPath());
+    return save(requestPtr_->getApp()->getUploadPath());
 }
 int HttpFileImpl::saveAs(const std::string &filename) const
 {
@@ -74,7 +75,7 @@ int HttpFileImpl::saveAs(const std::string &filename) const
     }
     else
     {
-        auto &uploadPath = HttpAppFrameworkImpl::instance().getUploadPath();
+        auto &uploadPath = requestPtr_->getApp()->getUploadPath();
         if (uploadPath[uploadPath.length() - 1] == '/')
             pathAndFileName = uploadPath + filename;
         else

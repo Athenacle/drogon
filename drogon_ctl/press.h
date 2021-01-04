@@ -41,7 +41,12 @@ struct Statistics
 };
 class press : public DrObject<press>, public CommandHandler
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
+    explicit press(HttpAppFrameworkImpl *app) : app_(app)
+    {
+    }
     virtual void handleCommand(std::vector<std::string> &parameters) override;
     virtual std::string script() override
     {

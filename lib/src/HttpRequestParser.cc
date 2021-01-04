@@ -25,8 +25,10 @@
 using namespace trantor;
 using namespace drogon;
 
-HttpRequestParser::HttpRequestParser(const trantor::TcpConnectionPtr &connPtr)
-    : status_(HttpRequestParseStatus::kExpectMethod),
+HttpRequestParser::HttpRequestParser(HttpAppFrameworkImpl *app,
+                                     const trantor::TcpConnectionPtr &connPtr)
+    : app_(app),
+      status_(HttpRequestParseStatus::kExpectMethod),
       loop_(connPtr->getLoop()),
       conn_(connPtr)
 {
@@ -117,7 +119,7 @@ void HttpRequestParser::reset()
     status_ = HttpRequestParseStatus::kExpectMethod;
     if (requestsPool_.empty())
     {
-        request_ = makeRequestForPool(new HttpRequestImpl(loop_));
+        request_ = makeRequestForPool(new HttpRequestImpl(app_, loop_));
     }
     else
     {
@@ -271,10 +273,9 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         auto connPtr = conn_.lock();
                         if (connPtr)
                         {
-                            auto resp = HttpResponse::newHttpResponse();
+                            auto resp = HttpResponse::newHttpResponse(app_);
                             if (currentContentLength_ >
-                                HttpAppFrameworkImpl::instance()
-                                    .getClientMaxBodySize())
+                                app_->getClientMaxBodySize())
                             {
                                 resp->setStatusCode(k413RequestEntityTooLarge);
                                 auto httpString =
@@ -306,8 +307,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                         }
                     }
                     else if (currentContentLength_ >
-                             HttpAppFrameworkImpl::instance()
-                                 .getClientMaxBodySize())
+                             app_->getClientMaxBodySize())
                     {
                         buf->retrieveAll();
                         shutdownConnection(k413RequestEntityTooLarge);
@@ -374,7 +374,7 @@ bool HttpRequestParser::parseRequest(MsgBuffer *buf)
                 if (currentChunkLength_ != 0)
                 {
                     if (currentChunkLength_ + currentContentLength_ >
-                        HttpAppFrameworkImpl::instance().getClientMaxBodySize())
+                        app_->getClientMaxBodySize())
                     {
                         buf->retrieveAll();
                         shutdownConnection(k413RequestEntityTooLarge);

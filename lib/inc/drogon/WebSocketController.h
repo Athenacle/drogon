@@ -24,10 +24,10 @@
 #include <string>
 #include <vector>
 
-#define WS_PATH_LIST_BEGIN        \
-    static void initPathRouting() \
+#define WS_PATH_LIST_BEGIN                                     \
+    static void initPathRouting(drogon::HttpAppFramework *app) \
     {
-#define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__});
+#define WS_PATH_ADD(path, ...) registerSelf__(app, path, {__VA_ARGS__});
 #define WS_PATH_LIST_END }
 
 namespace drogon
@@ -69,6 +69,8 @@ using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
 template <typename T, bool AutoCreation = true>
 class WebSocketController : public DrObject<T>, public WebSocketControllerBase
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
     static const bool isAutoCreation = AutoCreation;
     virtual ~WebSocketController()
@@ -76,19 +78,23 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     }
 
   protected:
-    WebSocketController()
+    WebSocketController(HttpAppFrameworkImpl *app) : app_(app)
     {
     }
     static void registerSelf__(
+        HttpAppFramework *app,
         const std::string &path,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods)
-    {
-        LOG_TRACE << "register websocket controller("
-                  << WebSocketController<T>::classTypeName()
-                  << ") on path:" << path;
-        app().registerWebSocketController(
-            path, WebSocketController<T>::classTypeName(), filtersAndMethods);
-    }
+        const std::vector<internal::HttpConstraint> &filtersAndMethods);
+    // FIXME: put this function in some cc file.
+    // {
+    //
+    //     LOG_TRACE << "register websocket controller("
+    //               << WebSocketController<T>::classTypeName()
+    //               << ") on path:" << path;
+    //     app().registerWebSocketController(
+    //         path, WebSocketController<T>::classTypeName(),
+    //         filtersAndMethods);
+    // }
 
   private:
     class pathRegistrator
@@ -98,7 +104,9 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         {
             if (AutoCreation)
             {
-                T::initPathRouting();
+                // FIXME: not-implemented
+                LOG_ERROR << "not-implemented";
+                // T::initPathRouting();
             }
         }
     };

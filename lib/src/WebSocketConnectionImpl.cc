@@ -23,7 +23,8 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
     : tcpConnectionPtr_(conn),
       localAddr_(conn->localAddr()),
       peerAddr_(conn->peerAddr()),
-      isServer_(isServer)
+      isServer_(isServer),
+      parser_(app_)
 {
 }
 
@@ -279,8 +280,7 @@ bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
         if (isMasked != 0)
         {
             // The message is sent by the client, check the length
-            if (length > HttpAppFrameworkImpl::instance()
-                             .getClientMaxWebSocketMessageSize())
+            if (length > app_->getClientMaxWebSocketMessageSize())
             {
                 LOG_ERROR << "The size of the WebSocket message is too large!";
                 buffer->retrieveAll();

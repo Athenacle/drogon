@@ -18,7 +18,11 @@ class TestController : public drogon::HttpSimpleController<TestController>
     PATH_ADD("/tpost", Post, Options);
     PATH_ADD("/slow", "TimeFilter", Get);
     PATH_LIST_END
-    TestController()
+
+    TestController(HttpAppFramework *app)
+        : drogon::HttpSimpleController<TestController>(
+              reinterpret_cast<HttpAppFrameworkImpl *>(app)),
+          threadIndex_(app)
     {
         LOG_DEBUG << "TestController constructor";
     }
