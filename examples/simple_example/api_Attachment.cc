@@ -4,6 +4,7 @@
 using namespace api;
 // add definition of your processing function here
 void Attachment::get(const HttpRequestPtr &req,
+                     const HttpOperation &op,
                      std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newHttpViewResponse(req->getApp(),
@@ -13,6 +14,7 @@ void Attachment::get(const HttpRequestPtr &req,
 }
 
 void Attachment::upload(const HttpRequestPtr &req,
+                        const HttpOperation &op,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
     MultiPartParser fileUpload;
@@ -54,6 +56,7 @@ void Attachment::upload(const HttpRequestPtr &req,
 
 void Attachment::download(
     const HttpRequestPtr &req,
+    const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto resp = HttpResponse::newFileResponse(req->getApp(),

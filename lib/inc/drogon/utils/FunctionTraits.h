@@ -24,6 +24,7 @@ namespace drogon
 {
 class HttpRequest;
 class HttpResponse;
+class HttpOperation;
 using HttpRequestPtr = std::shared_ptr<HttpRequest>;
 using HttpResponsePtr = std::shared_ptr<HttpResponse>;
 
@@ -80,6 +81,7 @@ struct FunctionTraits<ReturnType (ClassType::*)(Arguments...)>
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<
     ReturnType (*)(const HttpRequestPtr &req,
+                   const HttpOperation &op,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
@@ -91,6 +93,7 @@ struct FunctionTraits<
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<
     ReturnType (*)(HttpRequestPtr &req,
+                   const HttpOperation &op,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
@@ -101,6 +104,7 @@ struct FunctionTraits<
 template <typename ReturnType, typename... Arguments>
 struct FunctionTraits<
     ReturnType (*)(HttpRequestPtr &&req,
+                   const HttpOperation &,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {
@@ -112,6 +116,7 @@ struct FunctionTraits<
 template <typename T, typename ReturnType, typename... Arguments>
 struct FunctionTraits<
     ReturnType (*)(T &&customReq,
+                   const HttpOperation &op,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    Arguments...)> : FunctionTraits<ReturnType (*)(Arguments...)>
 {

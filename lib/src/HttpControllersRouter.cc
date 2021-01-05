@@ -598,6 +598,7 @@ void HttpControllersRouter::doControllerHandler(
     ctrlBinderPtr->binderPtr_->handleHttpRequest(
         params,
         req,
+        op_,
         [this, req, ctrlBinderPtr, callback = std::move(callback)](
             const HttpResponsePtr &resp) {
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)

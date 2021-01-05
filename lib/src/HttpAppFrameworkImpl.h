@@ -41,6 +41,7 @@ struct InitBeforeMainFunction
 
 class HttpAppFrameworkImpl : public HttpAppFramework
 {
+    HttpOperation *op_;
   public:
     HttpAppFrameworkImpl();
 
@@ -648,7 +649,6 @@ class HttpAppFrameworkImpl : public HttpAppFramework
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preHandlingObservers_;
 
-    HttpOperation *op_;
 };
 
 }  // namespace drogon

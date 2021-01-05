@@ -13,6 +13,7 @@ class A : public DrObjectBase
 {
   public:
     void handle(const HttpRequestPtr &req,
+                const HttpOperation &op,
                 std::function<void(const HttpResponsePtr &)> &&callback,
                 int p1,
                 const std::string &p2,
@@ -28,13 +29,12 @@ class A : public DrObjectBase
         para["int p4"] = std::to_string(p4);
 
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                     "ListParaView",
-                                                     data);
+        auto res = op.newHttpViewResponse("ListParaView", data);
         callback(res);
     }
     static void staticHandle(
         const HttpRequestPtr &req,
+        const HttpOperation &op,
         std::function<void(const HttpResponsePtr &)> &&callback,
         int p1,
         const std::string &p2,
@@ -50,9 +50,7 @@ class A : public DrObjectBase
         para["int p4"] = std::to_string(p4);
 
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                     "ListParaView",
-                                                     data);
+        auto res = op.newHttpViewResponse("ListParaView", data);
         callback(res);
     }
 };
@@ -60,6 +58,7 @@ class B : public DrObjectBase
 {
   public:
     void operator()(const HttpRequestPtr &req,
+                    const HttpOperation &op,
                     std::function<void(const HttpResponsePtr &)> &&callback,
                     int p1,
                     int p2)
@@ -70,9 +69,7 @@ class B : public DrObjectBase
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                     "ListParaView",
-                                                     data);
+        auto res = op.newHttpViewResponse("ListParaView", data);
         callback(res);
     }
 };
@@ -84,9 +81,10 @@ class C : public drogon::HttpController<C>
     ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
     METHOD_LIST_END
     void priv(const HttpRequestPtr &req,
+              const HttpOperation &op,
               std::function<void(const HttpResponsePtr &)> &&callback) const
     {
-        auto resp = HttpResponse::newHttpResponse(req->getApp());
+        auto resp = op.newHttpResponse();
         resp->setBody("<P>private content, only for authenticated users</P>");
         callback(resp);
     }
@@ -108,6 +106,7 @@ class Test : public HttpController<Test>
                Get);  // path is /api/v1/test/{arg2}/info
     METHOD_LIST_END
     void get(const HttpRequestPtr &req,
+             const HttpOperation &op,
              std::function<void(const HttpResponsePtr &)> &&callback,
              int p1,
              int p2) const
@@ -118,12 +117,11 @@ class Test : public HttpController<Test>
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                     "ListParaView",
-                                                     data);
+        auto res = op.newHttpViewResponse("ListParaView", data);
         callback(res);
     }
     void list(const HttpRequestPtr &req,
+              const HttpOperation &op,
               std::function<void(const HttpResponsePtr &)> &&callback,
               int p1,
               int p2) const
@@ -134,9 +132,7 @@ class Test : public HttpController<Test>
         para["p1"] = std::to_string(p1);
         para["p2"] = std::to_string(p2);
         data.insert("parameters", para);
-        auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                     "ListParaView",
-                                                     data);
+        auto res = op.newHttpViewResponse("ListParaView", data);
         callback(res);
     }
 };
@@ -178,6 +174,7 @@ int main()
     app->registerHandler(
         "/api/v1/handle2/{int a}/{float b}",
         [](const HttpRequestPtr &req,
+           const HttpOperation &op,
            std::function<void(const HttpResponsePtr &)> &&callback,
            int a,    // here the `a` parameter is converted from the number 1
                      // parameter in the path.
@@ -195,9 +192,7 @@ int main()
             para["a"] = std::to_string(a);
             para["b"] = std::to_string(b);
             data.insert("parameters", para);
-            auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                         "ListParaView",
-                                                         data);
+            auto res = op.newHttpViewResponse("ListParaView", data);
             callback(res);
             LOG_DEBUG << body.data();
             assert(!jsonPtr);
@@ -210,12 +205,13 @@ int main()
     // API example for std::function
     A tmp;
     std::function<void(const HttpRequestPtr &,
+                       const HttpOperation &,
                        std::function<void(const HttpResponsePtr &)> &&,
                        int,
                        const std::string &,
                        const std::string &,
                        int)>
-        func = std::bind(&A::handle, &tmp, _1, _2, _3, _4, _5, _6);
+        func = std::bind(&A::handle, &tmp, _1, _2, _3, _4, _5, _6, _7);
     app->registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
 
     app->setDocumentRoot("./");

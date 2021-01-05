@@ -67,7 +67,8 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : staticFileRouterPtr_(new StaticFileRouter(this)),
+    : op_(HttpOperation::createInstance(this)),
+      staticFileRouterPtr_(new StaticFileRouter(this)),
       httpCtrlsRouterPtr_(new HttpControllersRouter(this,
                                                     *staticFileRouterPtr_,
                                                     postRoutingAdvices_,
@@ -90,8 +91,7 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       listenerManagerPtr_(new ListenerManager(this)),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager(this)),
-      uploadPath_(rootPath_ + "uploads"),
-      op_(HttpOperation::createInstance(this))
+      uploadPath_(rootPath_ + "uploads")
 {
 }
 

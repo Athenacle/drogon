@@ -41,35 +41,46 @@ class ApiTest : public drogon::HttpController<ApiTest>
     METHOD_LIST_END
 
     void get(const HttpRequestPtr &req,
+             const HttpOperation &op,
              std::function<void(const HttpResponsePtr &)> &&callback,
              int p1,
              std::string &&p2);
     void your_method_name(
         const HttpRequestPtr &req,
+        const HttpOperation &,
         std::function<void(const HttpResponsePtr &)> &&callback,
         double p1,
         int p2) const;
     void staticApi(const HttpRequestPtr &req,
+                   const HttpOperation &,
                    std::function<void(const HttpResponsePtr &)> &&callback);
     void get2(const HttpRequestPtr &req,
+              const HttpOperation &,
               std::function<void(const HttpResponsePtr &)> &&callback,
               std::string &&p1);
     void rootGet(const HttpRequestPtr &req,
+                 const HttpOperation &,
                  std::function<void(const HttpResponsePtr &)> &&callback);
     void rootPost(const HttpRequestPtr &req,
+                  const HttpOperation &,
                   std::function<void(const HttpResponsePtr &)> &&callback);
     void jsonTest(std::shared_ptr<Json::Value> &&json,
+                  const HttpOperation &,
                   std::function<void(const HttpResponsePtr &)> &&callback);
     void formTest(const HttpRequestPtr &req,
+                  const HttpOperation &,
                   std::function<void(const HttpResponsePtr &)> &&callback);
     void attributesTest(
         const HttpRequestPtr &req,
+        const HttpOperation &,
         std::function<void(const HttpResponsePtr &)> &&callback);
     void regexTest(const HttpRequestPtr &req,
+                   const HttpOperation &,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    int p1,
                    std::string &&p2);
     void shutdown(const HttpRequestPtr &req,
+                  const HttpOperation &,
                   std::function<void(const HttpResponsePtr &)> &&callback)
     {
         reinterpret_cast<HttpAppFramework *>(req->getApp())->quit();
