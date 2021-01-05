@@ -16,6 +16,7 @@
 
 #include "impl_forwards.h"
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpOperation.h>
 #include <drogon/config.h>
 #include <json/json.h>
 #include <memory>
@@ -42,6 +43,11 @@ class HttpAppFrameworkImpl : public HttpAppFramework
 {
   public:
     HttpAppFrameworkImpl();
+
+    const HttpOperation &getOperations() const
+    {
+        return *op_;
+    }
 
     virtual const Json::Value &getCustomConfig() const override
     {
@@ -641,6 +647,8 @@ class HttpAppFrameworkImpl : public HttpAppFramework
         postRoutingObservers_;
     std::vector<std::function<void(const HttpRequestPtr &)>>
         preHandlingObservers_;
+
+    HttpOperation *op_;
 };
 
 }  // namespace drogon

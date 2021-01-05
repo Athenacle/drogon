@@ -34,6 +34,7 @@ namespace drogon
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
     HttpAppFrameworkImpl *app_;
+    const HttpOperation &op_;
 
   public:
     HttpSimpleControllersRouter(
@@ -55,6 +56,7 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
                                              const HttpResponsePtr &)>>
             &postHandlingAdvices)
         : app_(app),
+          op_(app->getOperations()),
           httpCtrlsRouter_(httpCtrlRouter),
           postRoutingAdvices_(postRoutingAdvices),
           preHandlingAdvices_(preHandlingAdvices),

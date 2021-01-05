@@ -25,6 +25,7 @@
 namespace drogon
 {
 class HttpAppFrameworkImpl;
+class HttpOperation;
 
 /// Abstract class for webapp developer to get or set the Http response;
 class HttpResponse;
@@ -69,6 +70,8 @@ inline HttpResponsePtr toResponse<Json::Value &>(HttpAppFrameworkImpl *app,
 
 class HttpResponse
 {
+    friend class HttpOperation;
+
   protected:
     HttpAppFrameworkImpl *app_;
 

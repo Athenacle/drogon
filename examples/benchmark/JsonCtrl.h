@@ -6,6 +6,7 @@ class JsonCtrl : public drogon::HttpSimpleController<JsonCtrl>
   public:
     virtual void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
+        const HttpOperation &op,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
     // list path definitions here;

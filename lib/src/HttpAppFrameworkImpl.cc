@@ -35,6 +35,7 @@
 #include <drogon/version.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrClassMap.h>
+#include <drogon/HttpAppFrameworkManager.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
@@ -89,7 +90,8 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       listenerManagerPtr_(new ListenerManager(this)),
       pluginsManagerPtr_(new PluginsManager),
       dbClientManagerPtr_(new orm::DbClientManager(this)),
-      uploadPath_(rootPath_ + "uploads")
+      uploadPath_(rootPath_ + "uploads"),
+      op_(HttpOperation::createInstance(this))
 {
 }
 
@@ -177,6 +179,8 @@ HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
     sharedLibManagerPtr_.reset();
 #endif
     sessionManagerPtr_.reset();
+
+    delete op_;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
 {
@@ -853,7 +857,9 @@ trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
 
 HttpAppFrameworkImpl *HttpAppFramework::create()
 {
-    return new HttpAppFrameworkImpl;
+    auto pointer = new HttpAppFrameworkImpl;
+    HttpAppFrameworkManager::instance().registerAppInstance(pointer);
+    return pointer;
 }
 
 HttpAppFramework::~HttpAppFramework()
@@ -967,6 +973,25 @@ void HttpAppFrameworkImpl::quit()
             getLoop()->quit();
         });
     }
+    auto &apps = HttpAppFrameworkManager::instance().apps_;
+
+#ifndef NDEBUG
+    bool erased = false;
+#endif
+
+    for (auto one = apps.begin(); one != apps.end(); ++one)
+    {
+        if (*one == this)
+        {
+            HttpAppFrameworkManager::instance().apps_.erase(one);
+#ifndef NDEBUG
+            erased = true;
+#endif
+        }
+    }
+#ifndef NDEBUG
+    assert(erased);
+#endif
 }
 
 const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
@@ -1043,13 +1068,4 @@ const std::function<HttpResponsePtr(HttpStatusCode)>
 std::vector<trantor::InetAddress> HttpAppFrameworkImpl::getListeners() const
 {
     return listenerManagerPtr_->getListeners();
-}
-
-void HttpAppFrameworkManager::registerAutoCreationHandlers(
-    HttpAppFramework *app)
-{
-    for (const auto &fun : autoCreationHandlerRegistor_)
-    {
-        fun(app);
-    }
 }

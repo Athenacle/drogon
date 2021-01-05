@@ -12,6 +12,7 @@
  *
  */
 
+#include "HttpAppFrameworkImpl.h"
 #include "HttpSimpleControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -227,6 +228,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
 
         controller->asyncHandleHttpRequest(
             req,
+            op_,
             [this, req, callback = std::move(callback), &ctrlBinderPtr](
                 const HttpResponsePtr &resp) {
                 auto newResp = resp;

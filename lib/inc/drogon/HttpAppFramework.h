@@ -1255,27 +1255,6 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::string &handlerName) = 0;
 };
 
-class HttpAppFrameworkManager
-{
-    std::vector<std::function<void(HttpAppFramework *)>>
-        autoCreationHandlerRegistor_;
-    HttpAppFrameworkManager() = default;
-    ~HttpAppFrameworkManager() = default;
-
-  public:
-    static HttpAppFrameworkManager &instance()
-    {
-        static HttpAppFrameworkManager manager;
-        return manager;
-    }
-    void pushAutoCreationFunction(
-        const std::function<void(HttpAppFramework *)> &func)
-    {
-        autoCreationHandlerRegistor_.emplace_back(func);
-    }
-    void registerAutoCreationHandlers(HttpAppFramework *app);
-};
-
 inline HttpAppFrameworkImpl *create()
 {
     return HttpAppFramework::create();

@@ -17,6 +17,8 @@
 #include <drogon/DrObject.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpAppFrameworkManager.h>
+#include <drogon/HttpOperation.h>
 #include <iostream>
 #include <string>
 #include <trantor/utils/Logger.h>
@@ -46,6 +48,12 @@ namespace drogon
  */
 class HttpControllerBase
 {
+  protected:
+    HttpOperation &action;
+
+    HttpControllerBase() : action(HttpOperation::defaultOperation)
+    {
+    }
 };
 
 /**

@@ -17,6 +17,8 @@
 #include <drogon/DrObject.h>
 #include <drogon/utils/HttpConstraint.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpAppFrameworkManager.h>
+#include <drogon/HttpController.h>
 #include <trantor/utils/Logger.h>
 #include <iostream>
 #include <string>
@@ -32,7 +34,8 @@ namespace drogon
  * @brief The abstract base class for HTTP simple controllers.
  *
  */
-class HttpSimpleControllerBase : public virtual DrObjectBase
+class HttpSimpleControllerBase : public virtual DrObjectBase,
+                                 public HttpControllerBase
 {
   public:
     /**
@@ -44,6 +47,7 @@ class HttpSimpleControllerBase : public virtual DrObjectBase
      */
     virtual void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
+        const HttpOperation &op,
         std::function<void(const HttpResponsePtr &)> &&callback) = 0;
     virtual ~HttpSimpleControllerBase()
     {
