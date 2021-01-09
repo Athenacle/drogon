@@ -105,7 +105,7 @@ HttpOperation *HttpOperation::createInstance(HttpAppFrameworkImpl *app)
 #ifndef NDEBUG
     op->init = true;
 #endif
-
+    op->app_ = app;
     return op;
 }
 

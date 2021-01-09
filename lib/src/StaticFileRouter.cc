@@ -63,12 +63,16 @@ void StaticFileRouter::route(
     if (path.find("/../") != std::string::npos)
     {
         // Downloading files from the parent folder is forbidden.
-        callback(app_->getCustomErrorHandler()(k403Forbidden));
+        callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                               req,
+                                               app_->getOperations()));
         return;
     }
     if (req->method() != Get)
     {
-        callback(app_->getCustomErrorHandler()(k405MethodNotAllowed));
+        callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                               req,
+                                               app_->getOperations()));
         return;
     }
     auto lPath = path;
@@ -117,7 +121,9 @@ void StaticFileRouter::route(
             auto pos = restOfThePath.rfind('/');
             if (pos != 0 && pos != string_view::npos && !location.isRecursive_)
             {
-                callback(app_->getCustomErrorHandler()(k403Forbidden));
+                callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                                       req,
+                                                       app_->getOperations()));
                 return;
             }
             std::string filePath =
@@ -138,7 +144,8 @@ void StaticFileRouter::route(
                 }
                 else
                 {
-                    callback(app_->getCustomErrorHandler()(k403Forbidden));
+                    callback(app_->getCustomErrorHandler()(
+                        k403Forbidden, req, app_->getOperations()));
                     return;
                 }
             }
@@ -149,7 +156,8 @@ void StaticFileRouter::route(
                     pos = restOfThePath.rfind('.');
                     if (pos == string_view::npos)
                     {
-                        callback(app_->getCustomErrorHandler()(k403Forbidden));
+                        callback(app_->getCustomErrorHandler()(
+                            k403Forbidden, req, app_->getOperations()));
                         return;
                     }
                     std::string extension{restOfThePath.data() + pos + 1,
@@ -160,7 +168,8 @@ void StaticFileRouter::route(
                                    tolower);
                     if (fileTypeSet_.find(extension) == fileTypeSet_.end())
                     {
-                        callback(app_->getCustomErrorHandler()(k403Forbidden));
+                        callback(app_->getCustomErrorHandler()(
+                            k403Forbidden, req, app_->getOperations()));
                         return;
                     }
                 }
@@ -214,7 +223,9 @@ void StaticFileRouter::route(
             }
             else
             {
-                callback(app_->getCustomErrorHandler()(k403Forbidden));
+                callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                                       req,
+                                                       app_->getOperations()));
                 return;
             }
         }
@@ -224,7 +235,9 @@ void StaticFileRouter::route(
             auto pos = path.rfind('.');
             if (pos == std::string::npos)
             {
-                callback(app_->getCustomErrorHandler()(k403Forbidden));
+                callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                                       req,
+                                                       app_->getOperations()));
                 return;
             }
             std::string filetype = lPath.substr(pos + 1);

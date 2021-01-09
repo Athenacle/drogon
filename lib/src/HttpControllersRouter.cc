@@ -429,12 +429,14 @@ void HttpControllersRouter::route(
                 // Invalid Http Method
                 if (req->method() != Options)
                 {
-                    callback(
-                        app_->getCustomErrorHandler()(k405MethodNotAllowed));
+                    callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                                           req,
+                                                           op_));
                 }
                 else
                 {
-                    callback(app_->getCustomErrorHandler()(k403Forbidden));
+                    callback(
+                        app_->getCustomErrorHandler()(k403Forbidden, req, op_));
                 }
                 return;
             }

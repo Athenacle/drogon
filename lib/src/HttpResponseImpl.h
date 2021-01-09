@@ -37,7 +37,9 @@ class HttpResponseImpl : public HttpResponse
     HttpResponseImpl() : creationDate_(trantor::Date::now())
     {
     }
-    HttpResponseImpl(HttpStatusCode code, ContentType type)
+    HttpResponseImpl(HttpStatusCode code,
+                     ContentType type,
+                     HttpAppFrameworkImpl *app = nullptr)
         : statusCode_(code),
           statusMessage_(statusCodeToString(code)),
           creationDate_(trantor::Date::now()),
@@ -45,6 +47,7 @@ class HttpResponseImpl : public HttpResponse
           flagForParsingContentType_(true),
           contentTypeString_(webContentTypeToString(type))
     {
+        app_ = app;
     }
     virtual void setPassThrough(bool flag) override
     {

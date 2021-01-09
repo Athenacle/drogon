@@ -117,9 +117,11 @@ std::string getGitCommit()
     return DROGON_VERSION_SHA1;
 }
 
-HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code,
+                                    const HttpRequestPtr &,
+                                    const HttpOperation &op)
 {
-    return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
+    return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML, op.getApp());
 }
 
 static void godaemon(void)
@@ -1052,15 +1054,15 @@ bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
-    std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    customErrorHandlerFunction &&resp_generator)
 {
     customErrorHandler_ = std::move(resp_generator);
     usingCustomErrorHandler_ = true;
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode)>
-    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+const HttpAppFramework::customErrorHandlerFunction &HttpAppFrameworkImpl::
+    getCustomErrorHandler() const
 {
     return customErrorHandler_;
 }

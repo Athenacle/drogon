@@ -141,23 +141,27 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(HttpAppFrameworkImpl *app)
             static std::once_flag threadOnce;
             static IOThreadStorage<HttpResponsePtr> thread404Pages(app);
             std::call_once(threadOnce, [app] {
-                thread404Pages.init(
-                    [app](drogon::HttpResponsePtr &resp, size_t index) {
-                        if (app->isUsingCustomErrorHandler())
-                        {
-                            resp = app->getCustomErrorHandler()(k404NotFound);
-                            resp->setExpiredTime(0);
-                        }
-                        else
-                        {
-                            HttpViewData data;
-                            data.insert("version", drogon::getVersion());
-                            resp = HttpResponse::newHttpViewResponse(
-                                app, "drogon::NotFound", data);
-                            resp->setStatusCode(k404NotFound);
-                            resp->setExpiredTime(0);
-                        }
-                    });
+                thread404Pages.init([app](drogon::HttpResponsePtr &resp,
+                                          size_t index) {
+                    if (app->isUsingCustomErrorHandler())
+                    {
+                        HttpRequestPtr ptr(nullptr);
+                        resp =
+                            app->getCustomErrorHandler()(k404NotFound,
+                                                         ptr,
+                                                         app->getOperations());
+                        resp->setExpiredTime(0);
+                    }
+                    else
+                    {
+                        HttpViewData data;
+                        data.insert("version", drogon::getVersion());
+                        resp = HttpResponse::newHttpViewResponse(
+                            app, "drogon::NotFound", data);
+                        resp->setStatusCode(k404NotFound);
+                        resp->setExpiredTime(0);
+                    }
+                });
             });
             LOG_TRACE << "Use cached 404 response";
             return thread404Pages.getThreadData();
@@ -166,7 +170,10 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(HttpAppFrameworkImpl *app)
         {
             if (app->isUsingCustomErrorHandler())
             {
-                auto resp = app->getCustomErrorHandler()(k404NotFound);
+                HttpRequestPtr ptr(nullptr);
+                auto resp = app->getCustomErrorHandler()(k404NotFound,
+                                                         ptr,
+                                                         app->getOperations());
                 return resp;
             }
             HttpViewData data;

@@ -114,12 +114,13 @@ void WebsocketControllersRouter::route(
                 // Invalid Http Method
                 if (req->method() != Options)
                 {
-                    callback(
-                        app_->getCustomErrorHandler()(k405MethodNotAllowed));
+                    callback(app_->getCustomErrorHandler()(
+                        k405MethodNotAllowed, req, app_->getOperations()));
                 }
                 else
                 {
-                    callback(app_->getCustomErrorHandler()(k403Forbidden));
+                    callback(app_->getCustomErrorHandler()(
+                        k403Forbidden, req, app_->getOperations()));
                 }
                 return;
             }

@@ -22,6 +22,8 @@ class HttpOperation
 
   private:
     trantor::EventLoop *loop_{nullptr};
+    HttpAppFrameworkImpl *app_;
+
     static HttpOperation *createInstance(HttpAppFrameworkImpl *);
 
     HttpOperation() = default;
@@ -103,6 +105,11 @@ class HttpOperation
     trantor::EventLoop *getLoop() const
     {
         return loop_;
+    }
+
+    auto getApp() const
+    {
+        return app_;
     }
 
     static HttpOperation defaultOperation;
