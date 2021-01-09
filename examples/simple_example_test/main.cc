@@ -31,6 +31,7 @@
 #define RESET "\033[0m"
 #define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
+#define YELLOW "\e[33m"  /* Yellow */
 
 #define JPG_LEN 44618
 size_t indexLen;
@@ -60,6 +61,31 @@ void outputGood(const HttpRequestPtr &req, bool isHttps)
         std::cout << RESET << std::endl;
     }
 }
+
+auto &getBadCount()
+{
+    static std::atomic_int count;
+    return count;
+}
+
+void outputBad(const HttpRequestPtr &req,
+               bool isHttps,
+               const ReqResult &result,
+               const HttpResponsePtr &resp)
+{
+    static std::mutex mtx;
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        auto i = getBadCount().fetch_add(1);
+        std::cout << i << YELLOW << '\t' << "Bad" << '\t' << req->methodString()
+                  << "------"
+                  << " " << req->path();
+        if (isHttps)
+            std::cout << "\t(https)";
+        std::cout << RESET << std::endl;
+    }
+}
+
 void doTest(const HttpClientPtr &client,
             std::promise<int> &pro,
             bool isHttps = false)
@@ -127,15 +153,12 @@ void doTest(const HttpClientPtr &client,
                             }
                             else
                             {
-                                LOG_DEBUG << resp1->body();
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req1, isHttps, result, resp1);
                             }
                         }
                         else
                         {
-                            LOG_ERROR << "Error!";
-                            exit(1);
+                            outputBad(req1, isHttps, result, resp1);
                         }
                     });
             }
@@ -161,15 +184,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 /// Test brotli
@@ -189,15 +209,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 #endif
@@ -219,15 +236,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     // Post json again
@@ -247,15 +261,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     // Post json again
@@ -274,15 +285,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -295,21 +303,18 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                // LOG_DEBUG << resp->getBody();
                                 if (resp->getBody() == "<p>Hello, world!</p>")
                                 {
                                     outputGood(req, isHttps);
                                 }
                                 else
                                 {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     /// 3. Post to /tpost to test Http Method constraint
@@ -321,21 +326,18 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                // LOG_DEBUG << resp->getBody();
                                 if (resp->statusCode() == k405MethodNotAllowed)
                                 {
                                     outputGood(req, isHttps);
                                 }
                                 else
                                 {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -353,14 +355,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -373,7 +373,6 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                // LOG_DEBUG << resp->getBody();
                                 auto allow = resp->getHeader("allow");
                                 if (resp->statusCode() == k200OK &&
                                     allow.find("POST") != std::string::npos)
@@ -382,14 +381,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -401,7 +398,6 @@ void doTest(const HttpClientPtr &client,
                                        const HttpResponsePtr &resp) {
                             if (result == ReqResult::Ok)
                             {
-                                // LOG_DEBUG << resp->getBody();
                                 auto allow = resp->getHeader("allow");
                                 if (resp->statusCode() == k200OK &&
                                     allow == "OPTIONS,GET,HEAD,POST")
@@ -410,14 +406,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -435,14 +429,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -453,7 +445,6 @@ void doTest(const HttpClientPtr &client,
         req, [req, isHttps](ReqResult result, const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
             {
-                // LOG_DEBUG << resp->getBody();
                 auto allow = resp->getHeader("allow");
                 if (resp->statusCode() == k200OK &&
                     allow == "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH")
@@ -462,14 +453,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -480,7 +469,6 @@ void doTest(const HttpClientPtr &client,
         req, [req, isHttps](ReqResult result, const HttpResponsePtr &resp) {
             if (result == ReqResult::Ok)
             {
-                // LOG_DEBUG << resp->getBody();
                 auto allow = resp->getHeader("allow");
                 if (resp->statusCode() == k200OK && allow == "OPTIONS,GET,HEAD")
                 {
@@ -488,14 +476,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -514,15 +500,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -540,15 +523,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -568,15 +548,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -599,15 +576,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -627,15 +601,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -653,19 +624,14 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
-
-    // auto loop = app().loop();
 
     req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Post);
@@ -681,15 +647,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -707,15 +670,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    // LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -745,15 +705,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
     /// Test Incomplete URL
@@ -781,15 +738,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
     /// Test lambda
@@ -810,15 +764,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -847,15 +798,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
     /// Test gzip_static
@@ -873,16 +821,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    LOG_ERROR << resp->getBody();
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     req = HttpRequest::newHttpRequest(app);
@@ -900,15 +844,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     /// Test file download
@@ -944,29 +885,23 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody().length();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 
@@ -986,15 +921,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     /// Test controllers created and initialized by users
@@ -1013,15 +945,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     /// Test controllers created and initialized by users
@@ -1038,15 +967,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     /// Test synchronous advice
@@ -1063,15 +989,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     /// Test form post
@@ -1092,15 +1015,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -1120,15 +1040,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
 
@@ -1147,15 +1064,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     // Test implicit pages
@@ -1176,16 +1090,12 @@ void doTest(const HttpClientPtr &client,
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody().length();
-                    LOG_ERROR << "Error!";
-                    LOG_ERROR << resp->getBody();
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
     req = HttpRequest::newHttpRequest(app);
@@ -1206,16 +1116,12 @@ void doTest(const HttpClientPtr &client,
                                 }
                                 else
                                 {
-                                    LOG_DEBUG << resp->getBody().length();
-                                    LOG_ERROR << "Error!";
-                                    LOG_ERROR << resp->getBody();
-                                    exit(1);
+                                    outputBad(req, isHttps, result, resp);
                                 }
                             }
                             else
                             {
-                                LOG_ERROR << "Error!";
-                                exit(1);
+                                outputBad(req, isHttps, result, resp);
                             }
                         });
     // return;
@@ -1236,20 +1142,15 @@ void doTest(const HttpClientPtr &client,
                     (*json)["P1"] == "upload" && (*json)["P2"] == "test")
                 {
                     outputGood(req, isHttps);
-                    // std::cout << (*json) << std::endl;
                 }
                 else
                 {
-                    LOG_DEBUG << resp->getBody().length();
-                    LOG_DEBUG << resp->getBody();
-                    LOG_ERROR << "Error!";
-                    exit(1);
+                    outputBad(req, isHttps, result, resp);
                 }
             }
             else
             {
-                LOG_ERROR << "Error!";
-                exit(1);
+                outputBad(req, isHttps, result, resp);
             }
         });
 }
@@ -1307,5 +1208,5 @@ int main(int argc, char *argv[])
     // getchar();
     loop[0].getLoop()->quit();
     loop[1].getLoop()->quit();
-    return 0;
+    return getBadCount();
 }
