@@ -4,7 +4,8 @@
 using namespace drogon;
 namespace example
 {
-class TestController : public drogon::HttpSimpleController<TestController>
+class TestController
+    : public drogon::HttpSimpleController<TestController, false>
 {
   public:
     virtual void asyncHandleHttpRequest(
@@ -21,7 +22,7 @@ class TestController : public drogon::HttpSimpleController<TestController>
     PATH_LIST_END
 
     TestController(HttpAppFramework *app)
-        : drogon::HttpSimpleController<TestController>(
+        : drogon::HttpSimpleController<TestController, false>(
               reinterpret_cast<HttpAppFrameworkImpl *>(app)),
           threadIndex_(app)
     {

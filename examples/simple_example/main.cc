@@ -2,6 +2,7 @@
 #include "CustomCtrl.h"
 #include "CustomHeaderFilter.h"
 #include "DigestAuthFilter.h"
+#include "TestController.h"
 #include <drogon/drogon.h>
 #include <vector>
 #include <string>
@@ -254,6 +255,9 @@ int main()
     // Install custom controller
     auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
     app->registerController(ctrlPtr);
+
+    auto testCtrl = std::make_shared<example::TestController>(app);
+    app->registerController(testCtrl);
 
     // Install custom filter
     auto filterPtr =
