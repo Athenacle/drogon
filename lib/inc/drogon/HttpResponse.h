@@ -76,6 +76,8 @@ class HttpResponse
     HttpAppFrameworkImpl *app_;
 
   public:
+    HttpResponse() = default;
+
     auto getApp() const
     {
         return app_;

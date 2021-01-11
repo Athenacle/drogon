@@ -23,7 +23,7 @@ using namespace drogon;
 void HttpResponseParser::reset()
 {
     status_ = HttpResponseParseStatus::kExpectResponseLine;
-    responsePtr_.reset(new HttpResponseImpl);
+    responsePtr_.reset(new HttpResponseImpl(nullptr));
     parseResponseForHeadMethod_ = false;
     leftBodyLength_ = 0;
     currentChunkLength_ = 0;
@@ -31,7 +31,7 @@ void HttpResponseParser::reset()
 
 HttpResponseParser::HttpResponseParser(const trantor::TcpConnectionPtr &connPtr)
     : status_(HttpResponseParseStatus::kExpectResponseLine),
-      responsePtr_(new HttpResponseImpl),
+      responsePtr_(new HttpResponseImpl(nullptr)),
       conn_(connPtr)
 {
 }

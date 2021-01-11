@@ -34,8 +34,10 @@ class HttpResponseImpl : public HttpResponse
     friend class HttpResponseParser;
 
   public:
-    HttpResponseImpl() : creationDate_(trantor::Date::now())
+    HttpResponseImpl(HttpAppFrameworkImpl *app)
+        : creationDate_(trantor::Date::now())
     {
+        app_ = app;
     }
     HttpResponseImpl(HttpStatusCode code,
                      ContentType type,

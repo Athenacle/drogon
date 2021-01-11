@@ -259,6 +259,7 @@ void StaticFileRouter::sendStaticFileResponse(
     const std::function<void(const HttpResponsePtr &)> &callback,
     const string_view &defaultContentType)
 {  // find cached response
+    assert(app_ == req->getApp());
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
     auto iter = cacheMap.find(filePath);
@@ -281,7 +282,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 req->getHeaderBy("if-modified-since"))
             {
                 std::shared_ptr<HttpResponseImpl> resp =
-                    std::make_shared<HttpResponseImpl>();
+                    std::make_shared<HttpResponseImpl>(app_);
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
                 app_->callCallback(req, resp, callback);
@@ -315,7 +316,7 @@ void StaticFileRouter::sendStaticFileResponse(
                 {
                     LOG_TRACE << "not Modified!";
                     std::shared_ptr<HttpResponseImpl> resp =
-                        std::make_shared<HttpResponseImpl>();
+                        std::make_shared<HttpResponseImpl>(app_);
                     resp->setStatusCode(k304NotModified);
                     resp->setContentTypeCode(CT_NONE);
                     app_->callCallback(req, resp, callback);

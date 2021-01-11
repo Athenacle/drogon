@@ -397,7 +397,6 @@ void ApiTest::jsonTest(std::shared_ptr<Json::Value> &&json,
     {
         ret["result"] = "bad";
     }
-    LOG_ERROR << "not-implemented";
     auto resp = op.newHttpJsonResponse(ret);
     callback(resp);
 }

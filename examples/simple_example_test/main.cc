@@ -68,6 +68,26 @@ auto &getBadCount()
     return count;
 }
 
+const std::string &dispatchReqResult(const ReqResult &r)
+{
+    static std::string un{"UnknownResult"};
+    static std::map<ReqResult, std::string> map = {
+        {ReqResult::Ok, "Ok"},
+        {ReqResult::BadResponse, "BadResponse"},
+        {ReqResult::BadServerAddress, "BadServerAddress"},
+        {ReqResult::NetworkFailure, "NetworkFailure"},
+        {ReqResult::Timeout, "Timeout"}};
+    const auto iter = map.find(r);
+    if (iter == map.end())
+    {
+        return un;
+    }
+    else
+    {
+        return iter->second;
+    }
+}
+
 void outputBad(const HttpRequestPtr &req,
                bool isHttps,
                const ReqResult &result,
@@ -79,7 +99,7 @@ void outputBad(const HttpRequestPtr &req,
         auto i = getBadCount().fetch_add(1);
         std::cout << i << YELLOW << '\t' << "Bad" << '\t' << req->methodString()
                   << "------"
-                  << " " << req->path();
+                  << " " << req->path() << ": " << dispatchReqResult(result);
         if (isHttps)
             std::cout << "\t(https)";
         std::cout << RESET << std::endl;

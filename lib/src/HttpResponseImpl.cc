@@ -192,10 +192,9 @@ HttpResponsePtr HttpResponse::newRedirectionResponse(
     const std::string &location,
     HttpStatusCode status)
 {
-    auto res = std::make_shared<HttpResponseImpl>();
+    auto res = std::make_shared<HttpResponseImpl>(app);
     res->setStatusCode(status);
     res->redirect(location);
-    res->app_ = app;
     doResponseCreateAdvices(app, res);
     return res;
 }
@@ -222,7 +221,7 @@ HttpResponsePtr HttpResponse::newFileResponse(
         auto resp = HttpResponse::newNotFoundResponse(app);
         return resp;
     }
-    auto resp = std::make_shared<HttpResponseImpl>();
+    auto resp = std::make_shared<HttpResponseImpl>(app);
     resp->app_ = app;
     std::streambuf *pbuf = infile.rdbuf();
     std::streamsize filesize = pbuf->pubseekoff(0, infile.end);
