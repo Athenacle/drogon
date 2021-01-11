@@ -19,13 +19,15 @@
 using namespace drogon;
 WebSocketConnectionImpl::WebSocketConnectionImpl(
     const trantor::TcpConnectionPtr &conn,
+    HttpAppFrameworkImpl *app,
     bool isServer)
     : tcpConnectionPtr_(conn),
       localAddr_(conn->localAddr()),
       peerAddr_(conn->peerAddr()),
       isServer_(isServer),
-      parser_(app_)
+      parser_(app)
 {
+    app_ = app;
 }
 
 void WebSocketConnectionImpl::send(const char *msg,

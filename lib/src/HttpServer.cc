@@ -258,7 +258,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     isWebSocket(requestParser->requestImpl()))
                 {
                     auto wsConn =
-                        std::make_shared<WebSocketConnectionImpl>(conn);
+                        std::make_shared<WebSocketConnectionImpl>(conn, app_);
                     newWebsocketCallback_(
                         requestParser->requestImpl(),
                         [conn, wsConn, requestParser](

@@ -58,6 +58,7 @@ class WebSocketConnectionImpl
 {
   public:
     explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn,
+                                     HttpAppFrameworkImpl *app,
                                      bool isServer = true);
 
     virtual void send(

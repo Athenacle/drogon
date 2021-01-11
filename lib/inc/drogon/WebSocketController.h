@@ -16,6 +16,7 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpAppFrameworkManager.h>
 #include <drogon/WebSocketConnection.h>
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/Logger.h>
@@ -78,23 +79,20 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     }
 
   protected:
-    WebSocketController(HttpAppFrameworkImpl *app) : app_(app)
+    WebSocketController()
     {
     }
     static void registerSelf__(
         HttpAppFramework *app,
         const std::string &path,
-        const std::vector<internal::HttpConstraint> &filtersAndMethods);
-    // FIXME: put this function in some cc file.
-    // {
-    //
-    //     LOG_TRACE << "register websocket controller("
-    //               << WebSocketController<T>::classTypeName()
-    //               << ") on path:" << path;
-    //     app().registerWebSocketController(
-    //         path, WebSocketController<T>::classTypeName(),
-    //         filtersAndMethods);
-    // }
+        const std::vector<internal::HttpConstraint> &filtersAndMethods)
+    {
+        LOG_TRACE << "register websocket controller("
+                  << WebSocketController<T>::classTypeName()
+                  << ") on path:" << path;
+        app->registerWebSocketController(
+            path, WebSocketController<T>::classTypeName(), filtersAndMethods);
+    }
 
   private:
     class pathRegistrator
@@ -104,9 +102,8 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         {
             if (AutoCreation)
             {
-                // FIXME: not-implemented
-                LOG_ERROR << "not-implemented";
-                // T::initPathRouting();
+                HttpAppFrameworkManager::instance().pushAutoCreationFunction(
+                    [](HttpAppFramework *app) { T::initPathRouting(app); });
             }
         }
     };

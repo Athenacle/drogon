@@ -251,7 +251,7 @@ void WebSocketClientImpl::onRecvMessage(
 #endif
         upgraded_ = true;
         websockConnPtr_ =
-            std::make_shared<WebSocketConnectionImpl>(connPtr, false);
+            std::make_shared<WebSocketConnectionImpl>(connPtr, app_, false);
         auto thisPtr = shared_from_this();
         websockConnPtr_->setMessageCallback(
             [thisPtr](std::string &&message,
@@ -423,11 +423,13 @@ WebSocketClientPtr WebSocketClient::newWebSocketClient(
     bool useOldTLS)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
-    return std::make_shared<WebSocketClientImpl>(
+    auto ret = std::make_shared<WebSocketClientImpl>(
         loop == nullptr ? app->getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
         useOldTLS);
+    ret->app_ = app;
+    return ret;
 }
 
 WebSocketClientPtr WebSocketClient::newWebSocketClient(
@@ -436,6 +438,8 @@ WebSocketClientPtr WebSocketClient::newWebSocketClient(
     trantor::EventLoop *loop,
     bool useOldTLS)
 {
-    return std::make_shared<WebSocketClientImpl>(
+    auto ret = std::make_shared<WebSocketClientImpl>(
         loop == nullptr ? app->getLoop() : loop, hostString, useOldTLS);
+    ret->app_ = app;
+    return ret;
 }

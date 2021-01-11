@@ -37,6 +37,9 @@ using WebSocketRequestCallback = std::function<
  */
 class WebSocketClient
 {
+  protected:
+    HttpAppFrameworkImpl *app_;
+
   public:
     /// Get the WebSocket connection that is typically used to send messages.
     virtual WebSocketConnectionPtr getConnection() = 0;
