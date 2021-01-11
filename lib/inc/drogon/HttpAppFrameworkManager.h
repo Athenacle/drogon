@@ -18,7 +18,7 @@ class HttpAppFrameworkManager
 
     void registerAppInstance(HttpAppFramework *app)
     {
-        std::lock_guard lock(lock_);
+        std::lock_guard<std::mutex> lock(lock_);
         apps_.emplace_back(app);
     }
     void destroyAppInstance(HttpAppFramework *impl);
@@ -26,6 +26,8 @@ class HttpAppFrameworkManager
     void stopAppInstance(HttpAppFramework *app);
 
   public:
+    void loopAppFramework(const std::function<void(HttpAppFramework *)> &);
+
     static HttpAppFrameworkManager &instance()
     {
         static HttpAppFrameworkManager manager;
@@ -34,7 +36,7 @@ class HttpAppFrameworkManager
     void pushAutoCreationFunction(
         const std::function<void(HttpAppFramework *)> &func)
     {
-        std::lock_guard lock(lock_);
+        std::lock_guard<std::mutex> lock(lock_);
         autoCreationHandlerRegistor_.emplace_back(func);
     }
     void registerAutoCreationHandlers(HttpAppFramework *app);

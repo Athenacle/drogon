@@ -167,8 +167,11 @@ static void TERMFunction(int sig)
     if (sig == SIGTERM)
     {
         LOG_WARN << "SIGTERM signal received.";
-        // FIXME: SIGTERM handler
-        // HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+        HttpAppFrameworkManager ::instance().loopAppFramework(
+            [](HttpAppFramework *app) {
+                reinterpret_cast<HttpAppFrameworkImpl *>(app)
+                    ->getTermSignalHandler()();
+            });
     }
 }
 
@@ -477,6 +480,7 @@ void HttpAppFrameworkImpl::run()
 #endif
     }
     signal(SIGTERM, TERMFunction);
+    signal(SIGINT, TERMFunction);
     // set logger
     if (!logPath_.empty())
     {
@@ -989,10 +993,10 @@ void HttpAppFrameworkImpl::quit()
     {
         if (*one == this)
         {
-            HttpAppFrameworkManager::instance().apps_.erase(one);
 #ifndef NDEBUG
             erased = true;
 #endif
+            break;
         }
     }
 #ifndef NDEBUG
