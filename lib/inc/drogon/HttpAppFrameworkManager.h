@@ -12,13 +12,17 @@ class HttpAppFrameworkManager
     std::vector<HttpAppFramework *> apps_;
     std::vector<std::function<void(HttpAppFramework *)>>
         autoCreationHandlerRegistor_;
+    std::mutex lock_;
     HttpAppFrameworkManager() = default;
-    ~HttpAppFrameworkManager() = default;
+    ~HttpAppFrameworkManager();
 
     void registerAppInstance(HttpAppFramework *app)
     {
+        std::lock_guard lock(lock_);
         apps_.emplace_back(app);
     }
+    void destroyAppInstance(HttpAppFramework *impl);
+
     void stopAppInstance(HttpAppFramework *app);
 
   public:
@@ -30,6 +34,7 @@ class HttpAppFrameworkManager
     void pushAutoCreationFunction(
         const std::function<void(HttpAppFramework *)> &func)
     {
+        std::lock_guard lock(lock_);
         autoCreationHandlerRegistor_.emplace_back(func);
     }
     void registerAutoCreationHandlers(HttpAppFramework *app);

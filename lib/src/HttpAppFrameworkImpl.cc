@@ -863,6 +863,10 @@ HttpAppFrameworkImpl *HttpAppFramework::create()
     HttpAppFrameworkManager::instance().registerAppInstance(pointer);
     return pointer;
 }
+void HttpAppFramework::destroy(HttpAppFrameworkImpl *impl)
+{
+    HttpAppFrameworkManager::instance().destroyAppInstance(impl);
+}
 
 HttpAppFramework::~HttpAppFramework()
 {

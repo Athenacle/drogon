@@ -1170,9 +1170,18 @@ void loadFileLengths()
     }
     indexImplicitLen = filestat.st_size;
 }
+
+HttpAppFrameworkImpl *app = nullptr;
+
 int main(int argc, char *argv[])
 {
-    auto app = HttpAppFramework::create();
+    app = HttpAppFramework::create();
+    atexit([] {
+        if (app != nullptr)
+        {
+            drogon::destroy(app);
+        }
+    });
     trantor::EventLoopThread loop[2];
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     bool ever = false;
@@ -1208,5 +1217,6 @@ int main(int argc, char *argv[])
     // getchar();
     loop[0].getLoop()->quit();
     loop[1].getLoop()->quit();
+
     return getBadCount();
 }

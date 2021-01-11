@@ -62,6 +62,7 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual ~HttpAppFramework();
 
     static HttpAppFrameworkImpl *create();
+    static void destroy(HttpAppFrameworkImpl *);
 
     /// Run the event loop
     /**
@@ -1262,6 +1263,11 @@ class HttpAppFramework : public trantor::NonCopyable
 inline HttpAppFrameworkImpl *create()
 {
     return HttpAppFramework::create();
+}
+
+inline void destroy(HttpAppFrameworkImpl *impl)
+{
+    HttpAppFramework::destroy(impl);
 }
 
 }  // namespace drogon
