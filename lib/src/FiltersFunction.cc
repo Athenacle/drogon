@@ -38,6 +38,7 @@ static void doFilterChains(
         auto &filter = filters[index];
         filter->doFilter(
             req,
+            app->getOperations(),
             [req, callbackPtr, app](const HttpResponsePtr &res) {
                 app->callCallback(req, res, *callbackPtr);
             },

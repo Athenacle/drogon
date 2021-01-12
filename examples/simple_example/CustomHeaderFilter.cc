@@ -9,6 +9,7 @@
 using namespace drogon;
 
 void CustomHeaderFilter::doFilter(const HttpRequestPtr &req,
+                                  const HttpOperation &op,
                                   FilterCallback &&fcb,
                                   FilterChainCallback &&fccb)
 {
@@ -19,7 +20,7 @@ void CustomHeaderFilter::doFilter(const HttpRequestPtr &req,
         return;
     }
     // Check failed
-    auto res = drogon::HttpResponse::newHttpResponse(req->getApp());
+    auto res = op.newHttpResponse();
     res->setStatusCode(k500InternalServerError);
     fcb(res);
 }

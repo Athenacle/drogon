@@ -148,13 +148,14 @@ DigestAuthFilter::DigestAuthFilter(
 }
 
 void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
+                                const HttpOperation &op,
                                 FilterCallback &&cb,
                                 FilterChainCallback &&ccb)
 {
     if (!req->session())
     {
         // no session support by framework,pls enable session
-        auto resp = HttpResponse::newNotFoundResponse(req->getApp());
+        auto resp = op.newNotFoundResponse();
         cb(resp);
         return;
     }
@@ -206,7 +207,7 @@ void DigestAuthFilter::doFilter(const HttpRequestPtr &req,
         }
     }
     // not Passed
-    auto resp = HttpResponse::newHttpResponse(req->getApp());
+    auto resp = op.newHttpResponse();
     resp->setStatusCode(k401Unauthorized);
     resp->addHeader("WWW-Authenticate",
                     " Digest realm=\"" + realm + "\", nonce=\"" +

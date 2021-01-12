@@ -11,6 +11,7 @@ class TimeFilter : public drogon::HttpFilter<TimeFilter>
 {
   public:
     virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&cb,
                           FilterChainCallback &&ccb) override;
     TimeFilter()

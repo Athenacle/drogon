@@ -28,6 +28,7 @@ class DigestAuthFilter : public drogon::HttpFilter<DigestAuthFilter, false>
                               const std::string &realm,
                               const std::string &opaque);
     virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&cb,
                           FilterChainCallback &&ccb) override;
 };

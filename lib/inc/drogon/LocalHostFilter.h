@@ -28,6 +28,7 @@ class LocalHostFilter : public HttpFilter<LocalHostFilter>
     {
     }
     virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) override;
 };
