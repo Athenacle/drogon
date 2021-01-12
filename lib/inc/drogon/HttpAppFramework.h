@@ -61,8 +61,8 @@ class HttpAppFramework : public trantor::NonCopyable
   public:
     virtual ~HttpAppFramework();
 
-    static HttpAppFrameworkImpl *create();
-    static void destroy(HttpAppFrameworkImpl *);
+    static HttpAppFramework *create();
+    static void destroy(HttpAppFramework *);
 
     /// Run the event loop
     /**
@@ -1245,6 +1245,8 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool reusePort() const = 0;
 
+    virtual const HttpOperation &getOperations() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,
@@ -1258,14 +1260,17 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::vector<HttpMethod> &validMethods,
         const std::vector<std::string> &filters,
         const std::string &handlerName) = 0;
+
+  protected:
+    HttpOperation *op_;
 };
 
-inline HttpAppFrameworkImpl *create()
+inline HttpAppFramework *create()
 {
     return HttpAppFramework::create();
 }
 
-inline void destroy(HttpAppFrameworkImpl *impl)
+inline void destroy(HttpAppFramework *impl)
 {
     HttpAppFramework::destroy(impl);
 }

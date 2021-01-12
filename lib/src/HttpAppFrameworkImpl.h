@@ -48,9 +48,18 @@ class HttpAppFrameworkImpl : public HttpAppFramework
   public:
     HttpAppFrameworkImpl();
 
-    const HttpOperation &getOperations() const
+    const HttpOperation &getOperations() const override
     {
         return *op_;
+    }
+
+    static HttpAppFrameworkImpl *getImpl(HttpAppFramework *app)
+    {
+#ifndef NDEBUG
+        return dynamic_cast<HttpAppFrameworkImpl *>(app);
+#else
+        return reinterpret_cast<HttpAppFrameworkImpl *>(app);
+#endif
     }
 
     virtual const Json::Value &getCustomConfig() const override

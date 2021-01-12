@@ -41,10 +41,10 @@ struct Statistics
 };
 class press : public DrObject<press>, public CommandHandler
 {
-    HttpAppFrameworkImpl *app_;
+    HttpAppFramework *app_;
 
   public:
-    explicit press(HttpAppFrameworkImpl *app) : app_(app)
+    explicit press(HttpAppFramework *app) : app_(app)
     {
     }
     virtual void handleCommand(std::vector<std::string> &parameters) override;

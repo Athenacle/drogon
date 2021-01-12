@@ -538,7 +538,7 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         uint16_t port,
-                                        HttpAppFrameworkImpl *app,
+                                        HttpAppFramework *app,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS)
@@ -552,7 +552,7 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
-                                        HttpAppFrameworkImpl *app,
+                                        HttpAppFramework *app,
                                         trantor::EventLoop *loop,
                                         bool useOldTLS)
 {
@@ -560,7 +560,7 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                                                 : loop,
                                                 hostString,
                                                 useOldTLS);
-    ret->app_ = app;
+    ret->app_ = HttpAppFrameworkImpl::getImpl(app);
     return ret;
 }
 

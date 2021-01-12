@@ -1191,17 +1191,11 @@ void loadFileLengths()
     indexImplicitLen = filestat.st_size;
 }
 
-HttpAppFrameworkImpl *app = nullptr;
-
 int main(int argc, char *argv[])
 {
-    app = HttpAppFramework::create();
-    atexit([] {
-        if (app != nullptr)
-        {
-            drogon::destroy(app);
-        }
-    });
+    auto app = HttpAppFramework::create();
+    auto &op = app->getOperations();
+
     trantor::EventLoopThread loop[2];
     trantor::Logger::setLogLevel(trantor::Logger::LogLevel::kDebug);
     bool ever = false;
@@ -1213,9 +1207,9 @@ int main(int argc, char *argv[])
     do
     {
         std::promise<int> pro1;
-        auto client = HttpClient::newHttpClient("http://127.0.0.1:8848",
-                                                app,
-                                                loop[0].getLoop());
+        auto client =
+            op.newHttpClient("http://127.0.0.1:8848", loop[0].getLoop());
+
         client->setPipeliningDepth(10);
         if (sessionID)
             client->addCookie(sessionID);
@@ -1223,8 +1217,8 @@ int main(int argc, char *argv[])
         if (reinterpret_cast<HttpAppFramework *>(app)->supportSSL())
         {
             std::promise<int> pro2;
-            auto sslClient = HttpClient::newHttpClient(
-                "127.0.0.1", 8849, app, true, loop[1].getLoop());
+            auto sslClient =
+                op.newHttpClient("127.0.0.1", 8849, true, loop[1].getLoop());
             if (sessionID)
                 sslClient->addCookie(sessionID);
             doTest(sslClient, pro2, true);

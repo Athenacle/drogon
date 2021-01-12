@@ -93,6 +93,7 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       dbClientManagerPtr_(new orm::DbClientManager(this)),
       uploadPath_(rootPath_ + "uploads")
 {
+    // op_ = HttpOperation::createInstance(this);
 }
 
 static std::function<void()> f = [] {
@@ -861,13 +862,13 @@ trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
     return listenerManagerPtr_->getIOLoop(id);
 }
 
-HttpAppFrameworkImpl *HttpAppFramework::create()
+HttpAppFramework *HttpAppFramework::create()
 {
     auto pointer = new HttpAppFrameworkImpl;
     HttpAppFrameworkManager::instance().registerAppInstance(pointer);
     return pointer;
 }
-void HttpAppFramework::destroy(HttpAppFrameworkImpl *impl)
+void HttpAppFramework::destroy(HttpAppFramework *impl)
 {
     HttpAppFrameworkManager::instance().destroyAppInstance(impl);
 }

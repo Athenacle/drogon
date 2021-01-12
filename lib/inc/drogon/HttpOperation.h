@@ -1,16 +1,31 @@
 
 #pragma once
 
-#include <drogon/HttpResponse.h>
-#include <trantor/net/EventLoop.h>
+#include <memory>
+#include <functional>
+#include <drogon/HttpTypes.h>
+#include <drogon/HttpViewData.h>
 
 namespace Json
 {
 class Value;
 }
 
+namespace trantor
+{
+class EventLoop;
+}
 namespace drogon
 {
+class HttpAppFrameworkImpl;
+class HttpResponse;
+using HttpResponsePtr = std::shared_ptr<HttpResponse>;
+class HttpRequest;
+using HttpRequestPtr = std::shared_ptr<HttpRequest>;
+class WebSocketClient;
+using WebSocketClientPtr = std::shared_ptr<WebSocketClient>;
+class HttpClient;
+using HttpClientPtr = std::shared_ptr<HttpClient>;
 class HttpOperation
 {
     friend class HttpAppFramework;
@@ -21,7 +36,9 @@ class HttpOperation
 #endif
 
   private:
-    trantor::EventLoop *loop_{nullptr};
+    using EvLoop = trantor::EventLoop;
+
+    EvLoop *loop_{nullptr};
     HttpAppFrameworkImpl *app_;
 
     static HttpOperation *createInstance(HttpAppFrameworkImpl *);
@@ -48,8 +65,61 @@ class HttpOperation
         HttpResponsePtr(const std::string &, const std::string &, ContentType)>
         file_;
 
+    std::function<HttpRequestPtr()> httpRequest_;
+
+    std::function<
+        HttpClientPtr(const std::string &, uint16_t, bool, EvLoop *, bool)>
+        newClientIPPort_;
+
+    std::function<HttpClientPtr(const std::string &, EvLoop *, bool)>
+        newClientString_;
+
+    std::function<
+        WebSocketClientPtr(const std::string &, uint16_t, bool, EvLoop *, bool)>
+        newWsClientIPPort_;
+
+    std::function<WebSocketClientPtr(const std::string &, EvLoop *, bool)>
+        newWsClientString_;
+
   public:
     HttpOperation &operator=(HttpOperation &&);
+
+    WebSocketClientPtr newWebSocketClient(const std::string &hostString,
+                                          trantor::EventLoop *loop = nullptr,
+                                          bool useOldTLS = false) const
+    {
+        return newWsClientString_(hostString, loop, useOldTLS);
+    }
+
+    WebSocketClientPtr newWebSocketClient(const std::string &ip,
+                                          uint16_t port,
+                                          bool useSSL = false,
+                                          EvLoop *loop = nullptr,
+                                          bool useOldTLS = false) const
+    {
+        return newWsClientIPPort_(ip, port, useSSL, loop, useOldTLS);
+    }
+
+    HttpClientPtr newHttpClient(const std::string &hostString,
+                                EvLoop *loop = nullptr,
+                                bool useOldTLS = false) const
+    {
+        return newClientString_(hostString, loop, useOldTLS);
+    }
+
+    HttpRequestPtr newHttpRequest() const
+    {
+        return httpRequest_();
+    }
+
+    HttpClientPtr newHttpClient(const std::string &ip,
+                                uint16_t port,
+                                bool useSSL = false,
+                                EvLoop *loop = nullptr,
+                                bool useOldTLS = false) const
+    {
+        return newClientIPPort_(ip, port, useSSL, loop, false);
+    }
 
     HttpResponsePtr newFileResponse(const std::string &fullPath,
                                     const std::string &attachmentFileName,
@@ -100,7 +170,22 @@ class HttpOperation
                                             HttpStatusCode)> &redirection,
         const std::function<HttpResponsePtr(const std::string &,
                                             const std::string &,
-                                            ContentType)> &file);
+                                            ContentType)> &file,
+        const std::function<HttpRequestPtr()> &httpReq,
+        const std::function<
+            HttpClientPtr(const std::string &, uint16_t, bool, EvLoop *, bool)>
+            &clientIPPort,
+
+        const std::function<HttpClientPtr(const std::string &, EvLoop *, bool)>
+            &clientString,
+        const std::function<WebSocketClientPtr(const std::string &,
+                                               uint16_t,
+                                               bool,
+                                               EvLoop *,
+                                               bool)> &wsClientIPPort,
+        const std::function<WebSocketClientPtr(const std::string &,
+                                               EvLoop *,
+                                               bool)> &wsClientString);
 
     trantor::EventLoop *getLoop() const
     {

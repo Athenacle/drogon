@@ -10,9 +10,9 @@ using namespace std::chrono_literals;
 int main(int argc, char *argv[])
 {
     auto app = drogon::create();
-    auto appp = reinterpret_cast<HttpAppFramework *>(app);
-    auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848, app);
-    auto req = HttpRequest::newHttpRequest(app);
+    auto &op = app->getOperations();
+    auto wsPtr = op.newWebSocketClient("127.0.0.1", 8848);
+    auto req = op.newHttpRequest();
     req->setPath("/chat");
     bool continually = true;
     if (argc > 1)
@@ -22,23 +22,21 @@ int main(int argc, char *argv[])
         else if (std::string(argv[1]) == "-p")
         {
             // Connect to a public web socket server.
-            wsPtr =
-                WebSocketClient::newWebSocketClient("wss://echo.websocket.org",
-                                                    app);
+            wsPtr = op.newWebSocketClient("wss://echo.websocket.org");
             req->setPath("/");
         }
     }
     wsPtr->setMessageHandler(
-        [continually, appp](const std::string &message,
-                            const WebSocketClientPtr &wsPtr,
-                            const WebSocketMessageType &type) {
+        [continually, app](const std::string &message,
+                           const WebSocketClientPtr &wsPtr,
+                           const WebSocketMessageType &type) {
             std::cout << "new message:" << message << std::endl;
             if (type == WebSocketMessageType::Pong)
             {
                 std::cout << "recv a pong" << std::endl;
                 if (!continually)
                 {
-                    appp->getLoop()->quit();
+                    app->getLoop()->quit();
                 }
             }
         });
@@ -65,12 +63,12 @@ int main(int argc, char *argv[])
                                    }
                                }
                            });
-    appp->getLoop()->runAfter(5.0, [continually]() {
+    app->getLoop()->runAfter(5.0, [continually]() {
         if (!continually)
         {
             exit(1);
         }
     });
-    appp->setLogLevel(trantor::Logger::kTrace);
-    appp->run();
+    app->setLogLevel(trantor::Logger::kTrace);
+    app->run();
 }
