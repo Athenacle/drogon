@@ -81,19 +81,24 @@ if(resource.empty())
 {
 %>
     void getOne(const HttpRequestPtr &req,
+                const HttpOperation &op,
                 std::function<void(const HttpResponsePtr &)> &&callback,
                 {%modelName%}::PrimaryKeyType &&id);
     void updateOne(const HttpRequestPtr &req,
+                   const HttpOperation &op,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    {%modelName%}::PrimaryKeyType &&id);
     void deleteOne(const HttpRequestPtr &req,
+                   const HttpOperation &op,
                    std::function<void(const HttpResponsePtr &)> &&callback,
                    {%modelName%}::PrimaryKeyType &&id);
 <%c++}
 %>
     void get(const HttpRequestPtr &req,
+             const HttpOperation &op,
              std::function<void(const HttpResponsePtr &)> &&callback);
     void create(const HttpRequestPtr &req,
+             const HttpOperation &op,
              std::function<void(const HttpResponsePtr &)> &&callback);
 
 };

@@ -116,7 +116,8 @@ void create_controller::newSimpleControllerHeaderFile(
     file << "{\n";
     file << "  public:\n";
     file << "    virtual void asyncHandleHttpRequest(const HttpRequestPtr& "
-            "req, std::function<void (const HttpResponsePtr &)> &&callback) "
+            "req, const HttpOperation &op, std::function<void (const "
+            "HttpResponsePtr &)> &&callback) "
             "override;\n";
 
     file << "    PATH_LIST_BEGIN\n";
@@ -147,7 +148,8 @@ void create_controller::newSimpleControllerSourceFile(
         class_name = className.substr(pos + 2);
     }
     file << "void " << class_name
-         << "::asyncHandleHttpRequest(const HttpRequestPtr& req, "
+         << "::asyncHandleHttpRequest(const HttpRequestPtr& req, const "
+            "HttpOperation& op,"
             "std::function<void (const HttpResponsePtr &)> &&callback)\n";
     file << "{\n";
     file << "    //write your application logic here\n";

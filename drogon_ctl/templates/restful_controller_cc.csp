@@ -25,20 +25,24 @@ std::string indentStr(@@.get<std::string>("className").length(), ' ');
 %>
 
 void [[className]]::getOne(const HttpRequestPtr &req,
+     {%indentStr%}         const HttpOperation &op,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}         std::string &&id)
 {
 }
 
 void [[className]]::get(const HttpRequestPtr &req,
+     {%indentStr%}      const HttpOperation &op,
      {%indentStr%}      std::function<void(const HttpResponsePtr &)> &&callback)
 {
 }
 void [[className]]::create(const HttpRequestPtr &req,
+     {%indentStr%}         const HttpOperation &op,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback)
 {
 }
 void [[className]]::updateOne(const HttpRequestPtr &req,
+     {%indentStr%}            const HttpOperation &op,
      {%indentStr%}            std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}            std::string &&id)
 {
@@ -46,12 +50,14 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
 
 /*
 void [[className]]::update(const HttpRequestPtr &req,
+     {%indentStr%}         const HttpOperation &op,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback)
 {
 
 }*/
 
 void [[className]]::deleteOne(const HttpRequestPtr &req,
+     {%indentStr%}            const HttpOperation &op,
      {%indentStr%}            std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}            std::string &&id)
 {

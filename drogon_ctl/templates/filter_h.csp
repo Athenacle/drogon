@@ -23,6 +23,7 @@ class [[className]] : public HttpFilter<[[className]]>
   public:
     [[className]]() {}
     virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) override;
 };
