@@ -165,9 +165,10 @@ static void godaemon(void)
 
 static void TERMFunction(int sig)
 {
-    if (sig == SIGTERM)
+    if (sig == SIGTERM || sig == SIGINT)
     {
-        LOG_WARN << "SIGTERM signal received.";
+        LOG_WARN << (sig == SIGTERM ? "SIGTERM" : "SIGINT")
+                 << " signal received.";
         HttpAppFrameworkManager ::instance().loopAppFramework(
             [](HttpAppFramework *app) {
                 reinterpret_cast<HttpAppFrameworkImpl *>(app)
