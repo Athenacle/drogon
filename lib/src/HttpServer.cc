@@ -162,7 +162,7 @@ HttpServer::HttpServer(
 #ifdef __linux__
       server_(loop, listenAddr, name.c_str()),
 #else
-      server_(loop, listenAddr, name.c_str(), true, app().reusePort()),
+      server_(loop, listenAddr, name.c_str(), true, app->reusePort()),
 #endif
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
