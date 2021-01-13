@@ -115,8 +115,8 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./test.sh -t
 
-    - name: Lint
-      if: runner.os == 'Linux'
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      shell: bash
-      run: ./format.sh && git diff --exit-code
+#   - name: Lint
+#     if: runner.os == 'Linux'
+#     working-directory: ${{env.GITHUB_WORKSPACE}}
+#     shell: bash
+#     run: ./format.sh && git diff --exit-code
