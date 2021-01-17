@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 using namespace drogon;
 
-drogon::HttpAppFramework* app;
+std::shared_ptr<drogon::HttpAppFramework> app;
 
 TEST(HttpHeader, Request)
 {

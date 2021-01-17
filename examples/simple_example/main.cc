@@ -156,7 +156,7 @@ string_view fromRequest(const HttpRequest &req)
 /// practice, we don't need such a lengthy main function.
 int main()
 {
-    auto app = reinterpret_cast<HttpAppFramework *>(drogon::create());
+    auto app = drogon::create();
     std::cout << banner << std::endl;
     // app().addListener("::1", 8848); //ipv6
     app->addListener("0.0.0.0", 8848);
@@ -256,7 +256,7 @@ int main()
     auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
     app->registerController(ctrlPtr);
 
-    auto testCtrl = std::make_shared<example::TestController>(app);
+    auto testCtrl = std::make_shared<example::TestController>(app.get());
     app->registerController(testCtrl);
 
     // Install custom filter
@@ -312,12 +312,11 @@ int main()
         LOG_DEBUG << "preHanding observer";
     });
     app->registerSyncAdvice(
-        [app](const HttpRequestPtr &req) -> HttpResponsePtr {
+        [&app](const HttpRequestPtr &req) -> HttpResponsePtr {
             static const HttpResponsePtr nullResp;
             if (req->path() == "/plaintext")
             {
-                auto resp = HttpResponse::newHttpResponse(
-                    reinterpret_cast<HttpAppFrameworkImpl *>(app));
+                auto resp = app->getOperations().newHttpResponse();
                 resp->setBody("Hello, World!");
                 resp->setContentTypeCodeAndCustomString(
                     CT_TEXT_PLAIN, "Content-Type: text/plain\r\n");
@@ -358,8 +357,7 @@ int main()
         }
         std::cout << std::get<2>(info) << std::endl;
     }
-    auto resp = HttpResponse::newFileResponse(
-        reinterpret_cast<HttpAppFrameworkImpl *>(app), "index.html");
+    auto resp = app->getOperations().newFileResponse("index.html");
     resp->setExpiredTime(0);
     app->setCustom404Page(resp);
     app->addListener("0.0.0.0", 0);

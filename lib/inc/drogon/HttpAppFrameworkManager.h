@@ -9,19 +9,19 @@ class HttpAppFrameworkManager
     friend class drogon::HttpAppFrameworkImpl;
     friend class drogon::HttpAppFramework;
 
-    std::vector<HttpAppFramework *> apps_;
+    std::vector<std::shared_ptr<HttpAppFramework>> apps_;
     std::vector<std::function<void(HttpAppFramework *)>>
         autoCreationHandlerRegistor_;
     std::mutex lock_;
     HttpAppFrameworkManager() = default;
     ~HttpAppFrameworkManager();
 
-    void registerAppInstance(HttpAppFramework *app)
+    void registerAppInstance(const std::shared_ptr<HttpAppFramework> &app)
     {
         std::lock_guard<std::mutex> lock(lock_);
         apps_.emplace_back(app);
     }
-    void destroyAppInstance(HttpAppFramework *impl);
+    void destroyAppInstance(const std::shared_ptr<HttpAppFramework> &impl);
 
     void stopAppInstance(HttpAppFramework *app);
 

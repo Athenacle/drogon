@@ -1214,7 +1214,7 @@ int main(int argc, char *argv[])
         if (sessionID)
             client->addCookie(sessionID);
         doTest(client, pro1);
-        if (reinterpret_cast<HttpAppFramework *>(app)->supportSSL())
+        if (app->supportSSL())
         {
             std::promise<int> pro2;
             auto sslClient =

@@ -8,7 +8,7 @@
  */
 int main()
 {
-    auto app = reinterpret_cast<drogon::HttpAppFramework*>(drogon::create());
+    auto app = drogon::create();
     std::thread([app]() {
         app->getLoop()->runEvery(1, []() { std::cout << "!" << std::endl; });
     }).detach();

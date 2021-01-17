@@ -122,7 +122,7 @@ class HttpOperation
     }
 
     HttpResponsePtr newFileResponse(const std::string &fullPath,
-                                    const std::string &attachmentFileName,
+                                    const std::string &attachmentFileName = "",
                                     ContentType ct = CT_NONE) const
     {
         return file_(fullPath, attachmentFileName, ct);

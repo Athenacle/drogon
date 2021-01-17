@@ -61,8 +61,8 @@ class HttpAppFramework : public trantor::NonCopyable
   public:
     virtual ~HttpAppFramework();
 
-    static HttpAppFramework *create();
-    static void destroy(HttpAppFramework *);
+    static std::shared_ptr<HttpAppFramework> create();
+    static void destroy(const std::shared_ptr<HttpAppFramework> &);
 
     /// Run the event loop
     /**
@@ -1265,12 +1265,12 @@ class HttpAppFramework : public trantor::NonCopyable
     HttpOperation *op_;
 };
 
-inline HttpAppFramework *create()
+inline std::shared_ptr<HttpAppFramework> create()
 {
     return HttpAppFramework::create();
 }
 
-inline void destroy(HttpAppFramework *impl)
+inline void destroy(const std::shared_ptr<HttpAppFramework> &impl)
 {
     HttpAppFramework::destroy(impl);
 }

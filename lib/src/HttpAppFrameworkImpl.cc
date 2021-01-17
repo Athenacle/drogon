@@ -863,13 +863,13 @@ trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
     return listenerManagerPtr_->getIOLoop(id);
 }
 
-HttpAppFramework *HttpAppFramework::create()
+std::shared_ptr<HttpAppFramework> HttpAppFramework::create()
 {
-    auto pointer = new HttpAppFrameworkImpl;
+    auto pointer = std::make_shared<HttpAppFrameworkImpl>();
     HttpAppFrameworkManager::instance().registerAppInstance(pointer);
     return pointer;
 }
-void HttpAppFramework::destroy(HttpAppFramework *impl)
+void HttpAppFramework::destroy(const std::shared_ptr<HttpAppFramework> &impl)
 {
     HttpAppFrameworkManager::instance().destroyAppInstance(impl);
 }
@@ -993,7 +993,7 @@ void HttpAppFrameworkImpl::quit()
 
     for (auto one = apps.begin(); one != apps.end(); ++one)
     {
-        if (*one == this)
+        if (one->get() == this)
         {
 #ifndef NDEBUG
             erased = true;

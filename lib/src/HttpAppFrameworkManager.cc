@@ -14,27 +14,28 @@ void HttpAppFrameworkManager::registerAutoCreationHandlers(
     }
 }
 
-void HttpAppFrameworkManager::destroyAppInstance(HttpAppFramework *impl)
+void HttpAppFrameworkManager::destroyAppInstance(
+    const std::shared_ptr<HttpAppFramework> &impl)
 {
     std::lock_guard<std::mutex> lock(lock_);
     auto iter = std::find(apps_.cbegin(), apps_.cend(), impl);
     assert(iter != apps_.end());
-    delete *iter;
     apps_.erase(iter);
 }
 void HttpAppFrameworkManager::loopAppFramework(
     const std::function<void(HttpAppFramework *)> &fn)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    std::for_each(apps_.cbegin(), apps_.cend(), fn);
+    std::for_each(apps_.begin(),
+                  apps_.end(),
+                  [&fn](std::shared_ptr<HttpAppFramework> &ptr) {
+                      fn(ptr.get());
+                  });
 }
 
 HttpAppFrameworkManager::~HttpAppFrameworkManager()
 {
     LOG_TRACE << apps_.size() << " instance of HttpAppFramework not freed";
-    std::lock_guard<std::mutex> lock(lock_);
-    for (auto iter : apps_)
-    {
-        delete iter;
-    }
+    apps_.clear();
+    autoCreationHandlerRegistor_.clear();
 }

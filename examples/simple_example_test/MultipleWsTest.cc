@@ -50,5 +50,5 @@ int main(int argc, char *argv[])
                 }
             });
     }
-    reinterpret_cast<HttpAppFramework *>(app)->run();
+    app->run();
 }

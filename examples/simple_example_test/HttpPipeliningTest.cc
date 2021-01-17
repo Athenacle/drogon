@@ -10,7 +10,7 @@ int main()
     auto &op = app->getOperations();
 
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
-    auto client = HttpClient::newHttpClient("127.0.0.1", 8848, app);
+    auto client = op.newHttpClient("127.0.0.1", 8848);
     client->setPipeliningDepth(64);
     int counter = -1;
     int n = 0;
@@ -73,7 +73,7 @@ int main()
     {
         client->sendRequest(
             request,
-            [&counter, &n, app](ReqResult r, const HttpResponsePtr &resp) {
+            [&counter, &n, app, &op](ReqResult r, const HttpResponsePtr &resp) {
                 if (r == ReqResult::Ok)
                 {
                     auto counterHeader = resp->getHeader("counter");
@@ -91,9 +91,7 @@ int main()
                         if (n == 20)
                         {
                             LOG_DEBUG << "Good!";
-                            reinterpret_cast<HttpAppFramework *>(app)
-                                ->getLoop()
-                                ->quit();
+                            op.getLoop()->quit();
                         }
                     }
                     if (resp->getBody().length() == 0)
@@ -108,5 +106,5 @@ int main()
                 }
             });
     }
-    reinterpret_cast<HttpAppFramework *>(app)->run();
+    app->run();
 }
