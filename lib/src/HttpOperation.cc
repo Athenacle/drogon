@@ -9,81 +9,141 @@
 
 using namespace drogon;
 
+#if __has_cpp_attribute(noreturn)
+#define NORETURN [[noreturn]]
+#else
+#define NORETURN
+#define NO_NORETURN
+#endif
+
 namespace
 {
+#ifdef NO_NORETURN
+auto empty()
+{
+    static std::shared_ptr<HttpResponse> resp;
+    return resp;
+}
+#endif
+
+NORETURN
 HttpResponsePtr emptyResponse()
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newHttpResponse called";
+#ifdef NO_NORETURN
+    return empty();
+#endif
 }
 
+NORETURN
 HttpResponsePtr json(const Json::Value &)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newHttpResponse called";
+#ifdef NO_NORETURN
+    return empty();
+#endif
 }
 
+NORETURN
 HttpResponsePtr jsonLV(Json::Value &&)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newJsonLVResponse called";
+#ifdef NO_NORETURN
+    return empty();
+#endif
 }
 
+NORETURN
 HttpResponsePtr httpView(const std::string &, const HttpViewData &)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newHttpView called";
+#ifdef NO_NORETURN
+    return empty();
+#endif
 }
 
+NORETURN
 HttpResponsePtr redirect(const std::string &, HttpStatusCode)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newRedirection called";
+#ifdef NO_NORETURN
+    return empty();
+#endif
 }
 
+NORETURN
 HttpResponsePtr file(const std::string &, const std::string &, ContentType)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newFileResponse called";
+#ifdef NO_NORETURN
+    return empty();
+#endif
 }
 
+NORETURN
 HttpRequestPtr httpReq()
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newHttpRequest called";
+#ifdef NO_NORETURN
+    return std::shared_ptr<HttpRequest>();
+#endif
 }
 
+NORETURN
 HttpClientPtr clientIpPort(const std::string &,
                            uint16_t,
                            bool,
                            trantor::EventLoop *,
                            bool)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newHttpClient called";
+#ifdef NO_NORETURN
+    return std::shared_ptr<HttpClient>();
+#endif
 }
 
+NORETURN
 HttpClientPtr clientString(const std::string &, trantor::EventLoop *, bool)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newHttpClient called";
+#ifdef NO_NORETURN
+    return std::shared_ptr<HttpClient>();
+#endif
 }
+
+NORETURN
 WebSocketClientPtr wsClientIpPort(const std::string &,
                                   uint16_t,
                                   bool,
                                   trantor::EventLoop *,
                                   bool)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newWebSocketClient called";
+#ifdef NO_NORETURN
+    return std::shared_ptr<WebSocketClient>();
+#endif
 }
 
+NORETURN
 WebSocketClientPtr wsClientString(const std::string &,
                                   trantor::EventLoop *,
                                   bool)
 {
-    assert(false);
+    std::abort();
     LOG_ERROR << "empty newWebSocketClient called";
+#ifdef NO_NORETURN
+    return std::shared_ptr<WebSocketClient>();
+#endif
 }
 
 }  // namespace
