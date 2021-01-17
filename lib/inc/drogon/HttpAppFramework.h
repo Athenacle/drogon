@@ -554,6 +554,13 @@ class HttpAppFramework : public trantor::NonCopyable
         return *this;
     }
 
+    template <typename T, typename... Args>
+    HttpAppFramework &registerController(Args &&...args)
+    {
+        auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+        return registerController(ptr);
+    }
+
     /// Register filter objects created and initialized by the user
     /**
      * This method is similar to the above method.
@@ -569,6 +576,13 @@ class HttpAppFramework : public trantor::NonCopyable
                       "registered here");
         DrClassMap::setSingleInstance(filterPtr);
         return *this;
+    }
+
+    template <typename T, typename... Args>
+    HttpAppFramework &registerFilter(Args &&...args)
+    {
+        auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+        return registerFilter(ptr);
     }
 
     /// Forward the http request

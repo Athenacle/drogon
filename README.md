@@ -166,6 +166,19 @@ int main()
 }
 
 ```
+* Add `registerController`, `registerFilter` helper
+```c++
+template <typename T, typename... Args>
+HttpAppFramework &registerController(Args &&...args)
+{
+    auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+    return registerController(ptr);
+}
+
+// ...
+app->registerController<CustomCtrl>("Hi");
+app->registerFilter<DigestAuthFilter>(config_credentials, realm, opaque);
+```
 ### Overview
 **Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
 
@@ -344,5 +357,3 @@ After compiling all of the above source files, we get a very simple web applicat
 
 ## Contributions
 Every contribution is welcome. Please refer to the [contribution guidelines](CONTRIBUTING.md) for more information.
-
-## Changes Compare to Upstream

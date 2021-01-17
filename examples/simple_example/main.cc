@@ -248,13 +248,10 @@ int main()
 
     // Install Digest Authentication Filter using custom config credentials,
     // used by C HttpController (/C/priv/resource)
-    auto auth_filter =
-        std::make_shared<DigestAuthFilter>(config_credentials, realm, opaque);
-    app->registerFilter(auth_filter);
+    app->registerFilter<DigestAuthFilter>(config_credentials, realm, opaque);
 
     // Install custom controller
-    auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
-    app->registerController(ctrlPtr);
+    app->registerController<CustomCtrl>("Hi");
 
     auto testCtrl = std::make_shared<example::TestController>(app.get());
     app->registerController(testCtrl);
