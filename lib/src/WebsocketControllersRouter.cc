@@ -15,6 +15,7 @@
 #include "WebsocketControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
+#include "HttpAppFrameworkImpl.h"
 #include "AOPAdvice.h"
 #include "WebSocketConnectionImpl.h"
 #include "FiltersFunction.h"
@@ -59,7 +60,7 @@ void WebsocketControllersRouter::registerWebSocketController(
     auto binder = std::make_shared<CtrlBinder>();
     binder->controllerName_ = ctrlName;
     binder->filterNames_ = filters;
-    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+    app_->getLoop()->queueInLoop([binder, ctrlName]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
             std::dynamic_pointer_cast<WebSocketControllerBase>(object_);
@@ -93,6 +94,7 @@ void WebsocketControllersRouter::route(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
+    assert(req->getApp() == app_);
     std::string wsKey = req->getHeaderBy("sec-websocket-key");
     if (!wsKey.empty())
     {
@@ -112,12 +114,13 @@ void WebsocketControllersRouter::route(
                 // Invalid Http Method
                 if (req->method() != Options)
                 {
-                    callback(
-                        app().getCustomErrorHandler()(k405MethodNotAllowed));
+                    callback(app_->getCustomErrorHandler()(
+                        k405MethodNotAllowed, req, app_->getOperations()));
                 }
                 else
                 {
-                    callback(app().getCustomErrorHandler()(k403Forbidden));
+                    callback(app_->getCustomErrorHandler()(
+                        k403Forbidden, req, app_->getOperations()));
                 }
                 return;
             }
@@ -210,7 +213,7 @@ void WebsocketControllersRouter::route(
             return;
         }
     }
-    auto resp = drogon::HttpResponse::newNotFoundResponse();
+    auto resp = drogon::HttpResponse::newNotFoundResponse(app_);
     resp->setCloseConnection(true);
     callback(resp);
 }
@@ -244,9 +247,10 @@ void WebsocketControllersRouter::doControllerHandler(
     std::function<void(const HttpResponsePtr &)> &&callback,
     const WebSocketConnectionImplPtr &wsConnPtr)
 {
+    assert(req->getApp() == app_);
     if (req->method() == Options)
     {
-        auto resp = HttpResponse::newHttpResponse();
+        auto resp = HttpResponse::newHttpResponse(app_);
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         std::string methods = "OPTIONS,";
         if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
@@ -296,7 +300,7 @@ void WebsocketControllersRouter::doControllerHandler(
          wsKey.length(),
          accKey);
     auto base64Key = utils::base64Encode(accKey, SHA_DIGEST_LENGTH);
-    auto resp = HttpResponse::newHttpResponse();
+    auto resp = HttpResponse::newHttpResponse(app_);
     resp->setStatusCode(k101SwitchingProtocols);
     resp->addHeader("Upgrade", "websocket");
     resp->addHeader("Connection", "Upgrade");

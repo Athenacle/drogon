@@ -34,6 +34,7 @@ std::string indentStr(@@.get<std::string>("className").length(), ' ');
 if(hasPrimaryKey)
 {%>
 void [[className]]::getOne(const HttpRequestPtr &req,
+     {%indentStr%}         const HttpOperation &op,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}         {%modelName%}::PrimaryKeyType &&id)
 {
@@ -42,6 +43,7 @@ void [[className]]::getOne(const HttpRequestPtr &req,
 
 
 void [[className]]::updateOne(const HttpRequestPtr &req,
+     {%indentStr%}            const HttpOperation &op,
      {%indentStr%}            std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}            {%modelName%}::PrimaryKeyType &&id)
 {
@@ -50,6 +52,7 @@ void [[className]]::updateOne(const HttpRequestPtr &req,
 
 
 void [[className]]::deleteOne(const HttpRequestPtr &req,
+     {%indentStr%}            const HttpOperation &op,
      {%indentStr%}            std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}            {%modelName%}::PrimaryKeyType &&id)
 {
@@ -58,12 +61,14 @@ void [[className]]::deleteOne(const HttpRequestPtr &req,
 <%c++}%>
 
 void [[className]]::get(const HttpRequestPtr &req,
+     {%indentStr%}      const HttpOperation &op,
      {%indentStr%}      std::function<void(const HttpResponsePtr &)> &&callback)
 {
     [[className]]Base::get(req, std::move(callback));
 }
 
 void [[className]]::create(const HttpRequestPtr &req,
+     {%indentStr%}         const HttpOperation &op,
      {%indentStr%}         std::function<void(const HttpResponsePtr &)> &&callback)
 {
     [[className]]Base::create(req, std::move(callback));

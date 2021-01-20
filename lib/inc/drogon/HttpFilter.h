@@ -18,6 +18,7 @@
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/HttpOperation.h>
 #include <memory>
 
 namespace drogon
@@ -41,6 +42,7 @@ class HttpFilterBase : public virtual DrObjectBase
      * or the handler registered on the path is called.
      */
     virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) = 0;
     virtual ~HttpFilterBase()

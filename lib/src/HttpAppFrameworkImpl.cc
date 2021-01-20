@@ -35,6 +35,7 @@
 #include <drogon/version.h>
 #include <drogon/CacheMap.h>
 #include <drogon/DrClassMap.h>
+#include <drogon/HttpAppFrameworkManager.h>
 #include <drogon/HttpRequest.h>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
@@ -66,28 +67,33 @@ using namespace drogon;
 using namespace std::placeholders;
 
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
-    : staticFileRouterPtr_(new StaticFileRouter{}),
-      httpCtrlsRouterPtr_(new HttpControllersRouter(*staticFileRouterPtr_,
+    : op_(HttpOperation::createInstance(this)),
+      staticFileRouterPtr_(new StaticFileRouter(this)),
+      httpCtrlsRouterPtr_(new HttpControllersRouter(this,
+                                                    *staticFileRouterPtr_,
                                                     postRoutingAdvices_,
                                                     postRoutingObservers_,
                                                     preHandlingAdvices_,
                                                     preHandlingObservers_,
                                                     postHandlingAdvices_)),
       httpSimpleCtrlsRouterPtr_(
-          new HttpSimpleControllersRouter(*httpCtrlsRouterPtr_,
+          new HttpSimpleControllersRouter(this,
+                                          *httpCtrlsRouterPtr_,
                                           postRoutingAdvices_,
                                           postRoutingObservers_,
                                           preHandlingAdvices_,
                                           preHandlingObservers_,
                                           postHandlingAdvices_)),
       websockCtrlsRouterPtr_(
-          new WebsocketControllersRouter(postRoutingAdvices_,
+          new WebsocketControllersRouter(this,
+                                         postRoutingAdvices_,
                                          postRoutingObservers_)),
-      listenerManagerPtr_(new ListenerManager),
+      listenerManagerPtr_(new ListenerManager(this)),
       pluginsManagerPtr_(new PluginsManager),
-      dbClientManagerPtr_(new orm::DbClientManager),
+      dbClientManagerPtr_(new orm::DbClientManager(this)),
       uploadPath_(rootPath_ + "uploads")
 {
+    // op_ = HttpOperation::createInstance(this);
 }
 
 static std::function<void()> f = [] {
@@ -96,7 +102,8 @@ static std::function<void()> f = [] {
 
 /// Make sure that the main event loop is initialized in the main thread.
 drogon::InitBeforeMainFunction drogon::HttpAppFrameworkImpl::initFirst_([]() {
-    HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
+    // FIXME: change this
+    // HttpAppFrameworkImpl::instance().getLoop()->runInLoop(f);
 });
 
 namespace drogon
@@ -111,9 +118,11 @@ std::string getGitCommit()
     return DROGON_VERSION_SHA1;
 }
 
-HttpResponsePtr defaultErrorHandler(HttpStatusCode code)
+HttpResponsePtr defaultErrorHandler(HttpStatusCode code,
+                                    const HttpRequestPtr &,
+                                    const HttpOperation &op)
 {
-    return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML);
+    return std::make_shared<HttpResponseImpl>(code, CT_TEXT_HTML, op.getApp());
 }
 
 static void godaemon(void)
@@ -156,10 +165,15 @@ static void godaemon(void)
 
 static void TERMFunction(int sig)
 {
-    if (sig == SIGTERM)
+    if (sig == SIGTERM || sig == SIGINT)
     {
-        LOG_WARN << "SIGTERM signal received.";
-        HttpAppFrameworkImpl::instance().getTermSignalHandler()();
+        LOG_WARN << (sig == SIGTERM ? "SIGTERM" : "SIGINT")
+                 << " signal received.";
+        HttpAppFrameworkManager ::instance().loopAppFramework(
+            [](HttpAppFramework *app) {
+                reinterpret_cast<HttpAppFrameworkImpl *>(app)
+                    ->getTermSignalHandler()();
+            });
     }
 }
 
@@ -172,6 +186,8 @@ HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
     sharedLibManagerPtr_.reset();
 #endif
     sessionManagerPtr_.reset();
+
+    delete op_;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
 {
@@ -350,21 +366,21 @@ HttpAppFramework &HttpAppFrameworkImpl::setMaxConnectionNumPerIP(
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigFile(
     const std::string &fileName)
 {
-    ConfigLoader loader(fileName);
+    ConfigLoader loader(this, fileName);
     loader.load();
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(const Json::Value &data)
 {
-    ConfigLoader loader(data);
+    ConfigLoader loader(this, data);
     loader.load();
     jsonConfig_ = loader.jsonValue();
     return *this;
 }
 HttpAppFramework &HttpAppFrameworkImpl::loadConfigJson(Json::Value &&data)
 {
-    ConfigLoader loader(std::move(data));
+    ConfigLoader loader(this, std::move(data));
     loader.load();
     jsonConfig_ = loader.jsonValue();
     return *this;
@@ -415,6 +431,8 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
 
 void HttpAppFrameworkImpl::run()
 {
+    HttpAppFrameworkManager::instance().registerAutoCreationHandlers(this);
+
     if (!getLoop()->isInLoopThread())
     {
         getLoop()->moveToCurrentThread();
@@ -464,6 +482,7 @@ void HttpAppFrameworkImpl::run()
 #endif
     }
     signal(SIGTERM, TERMFunction);
+    signal(SIGINT, TERMFunction);
     // set logger
     if (!logPath_.empty())
     {
@@ -793,7 +812,7 @@ void HttpAppFrameworkImpl::onAsyncRequest(
     LOG_TRACE << "http path=" << req->path();
     if (req->method() == Options && (req->path() == "*" || req->path() == "/*"))
     {
-        auto resp = HttpResponse::newHttpResponse();
+        auto resp = HttpResponse::newHttpResponse(this);
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         resp->addHeader("ALLOW", "GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH");
         resp->setExpiredTime(0);
@@ -844,9 +863,15 @@ trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const
     return listenerManagerPtr_->getIOLoop(id);
 }
 
-HttpAppFramework &HttpAppFramework::instance()
+std::shared_ptr<HttpAppFramework> HttpAppFramework::create()
 {
-    return HttpAppFrameworkImpl::instance();
+    auto pointer = std::make_shared<HttpAppFrameworkImpl>();
+    HttpAppFrameworkManager::instance().registerAppInstance(pointer);
+    return pointer;
+}
+void HttpAppFramework::destroy(const std::shared_ptr<HttpAppFramework> &impl)
+{
+    HttpAppFrameworkManager::instance().destroyAppInstance(impl);
 }
 
 HttpAppFramework::~HttpAppFramework()
@@ -899,8 +924,8 @@ void HttpAppFrameworkImpl::forward(
         req->setPassThrough(true);
         clientPtr->sendRequest(
             req,
-            [callback = std::move(callback)](ReqResult result,
-                                             const HttpResponsePtr &resp) {
+            [callback = std::move(callback),
+             this](ReqResult result, const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
                     resp->setPassThrough(true);
@@ -908,7 +933,7 @@ void HttpAppFrameworkImpl::forward(
                 }
                 else
                 {
-                    callback(HttpResponse::newNotFoundResponse());
+                    callback(HttpResponse::newNotFoundResponse(this));
                 }
             },
             timeout);
@@ -960,6 +985,25 @@ void HttpAppFrameworkImpl::quit()
             getLoop()->quit();
         });
     }
+    auto &apps = HttpAppFrameworkManager::instance().apps_;
+
+#ifndef NDEBUG
+    bool erased = false;
+#endif
+
+    for (auto one = apps.begin(); one != apps.end(); ++one)
+    {
+        if (one->get() == this)
+        {
+#ifndef NDEBUG
+            erased = true;
+#endif
+            break;
+        }
+    }
+#ifndef NDEBUG
+    assert(erased);
+#endif
 }
 
 const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
@@ -969,10 +1013,10 @@ const HttpResponsePtr &HttpAppFrameworkImpl::getCustom404Page()
         return custom404_;
     }
     auto loop = trantor::EventLoop::getEventLoopOfCurrentThread();
-    if (loop && loop->index() < app().getThreadNum())
+    if (loop && loop->index() < getThreadNum())
     {
         // If the current thread is an IO thread
-        static IOThreadStorage<HttpResponsePtr> thread404Pages;
+        static IOThreadStorage<HttpResponsePtr> thread404Pages(this);
         static std::once_flag once;
         std::call_once(once, [this] {
             thread404Pages.init([this](HttpResponsePtr &resp, size_t index) {
@@ -1020,15 +1064,15 @@ bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
-    std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator)
+    customErrorHandlerFunction &&resp_generator)
 {
     customErrorHandler_ = std::move(resp_generator);
     usingCustomErrorHandler_ = true;
     return *this;
 }
 
-const std::function<HttpResponsePtr(HttpStatusCode)>
-    &HttpAppFrameworkImpl::getCustomErrorHandler() const
+const HttpAppFramework::customErrorHandlerFunction &HttpAppFrameworkImpl::
+    getCustomErrorHandler() const
 {
     return customErrorHandler_;
 }

@@ -22,8 +22,11 @@
 #include <memory>
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 class HttpFileImpl
 {
+    HttpAppFrameworkImpl *app;
+
   public:
     /// Return the file name;
     const std::string &getFileName() const

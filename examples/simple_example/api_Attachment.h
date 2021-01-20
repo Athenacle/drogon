@@ -14,10 +14,13 @@ class Attachment : public drogon::HttpController<Attachment>
     METHOD_LIST_END
     // your declaration of processing function maybe like this:
     void get(const HttpRequestPtr &req,
+             const HttpOperation &op,
              std::function<void(const HttpResponsePtr &)> &&callback);
     void upload(const HttpRequestPtr &req,
+                const HttpOperation &op,
                 std::function<void(const HttpResponsePtr &)> &&callback);
     void download(const HttpRequestPtr &req,
+                  const HttpOperation &,
                   std::function<void(const HttpResponsePtr &)> &&callback);
 };
 }  // namespace api

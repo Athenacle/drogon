@@ -1,13 +1,184 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
-[![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
-![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
-[![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
-[![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
+![Build Drogon](https://github.com/Athenacle/drogon/workflows/Build%20Drogon/badge.svg)
+[![Build status](https://ci.appveyor.com/api/projects/status/6ju7h9l71u2vjoo5/branch/master?svg=true)](https://ci.appveyor.com/project/Athenacle/drogon/branch/master)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/Athenacle/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Athenacle/drogon/alerts/)
+[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Athenacle/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Athenacle/drogon/context:javascript)
 
 English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
+
+### Changes Compares to [Upstream](https://github.com/an-tao/drogon)
+* drogon::app() was removed, use **drogon::create()** instead
+ ```c++
+#include <drogon/drogon.h>
+using namespace drogon;
+int main()
+{
+    auto app = drogon::create();
+    // app is std::shared_ptr<HttpAppFramework>
+    app->run();
+}
+ ```
+* Add class **HttpOperation**, then modified request handlers. [See Examples](./examples/simple_example/main.cc)
+```c++
+// filter
+class LoginFilter : public drogon::HttpFilter<LoginFilter>
+{
+  public:
+    virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
+                          FilterCallback &&cb,
+                          FilterChainCallback &&ccb) override;
+    TimeFilter();
+};
+
+// simple controller
+class BenchmarkCtrl : public drogon::HttpSimpleController<BenchmarkCtrl>
+{
+  public:
+    virtual void asyncHandleHttpRequest(
+        const HttpRequestPtr &req,
+        const HttpOperation &op,
+        std::function<void(const HttpResponsePtr &)> &&callback) override;
+    PATH_LIST_BEGIN
+    PATH_ADD("/benchmark", Get);
+    PATH_LIST_END
+};
+
+// class function
+class A : public DrObjectBase
+{
+  public:
+    void handle(const HttpRequestPtr &req,
+                const HttpOperation &op,
+                std::function<void(const HttpResponsePtr &)> &&callback,
+                int p1,
+                const std::string &p2,
+                const std::string &p3,
+                int p4) const
+    {
+        // ...
+        auto res = op.newHttpViewResponse("ListParaView", data);
+        callback(res);
+    }
+    static void staticHandle(
+        const HttpRequestPtr &req,
+        const HttpOperation &op,
+        std::function<void(const HttpResponsePtr &)> &&callback,
+        int p1,
+        const std::string &p2,
+        const std::string &p3,
+        int p4)
+    {
+        // ...
+        auto res = op.newHttpViewResponse("ListParaView", data);
+        callback(res);
+    }
+};
+
+// functor
+class B : public DrObjectBase
+{
+  public:
+    void operator()(const HttpRequestPtr &req,
+                    const HttpOperation &op,
+                    std::function<void(const HttpResponsePtr &)> &&callback,
+                    int p1,
+                    int p2)
+    {
+        // ...
+        auto res = op.newHttpViewResponse("ListParaView", data);
+        callback(res);
+    }
+};
+
+// controller
+class C : public drogon::HttpController<C>
+{
+  public:
+    METHOD_LIST_BEGIN
+    ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
+    METHOD_LIST_END
+    void priv(const HttpRequestPtr &req,
+              const HttpOperation &op,
+              std::function<void(const HttpResponsePtr &)> &&callback) const
+    {
+        auto resp = op.newHttpResponse();
+        callback(resp);
+    }
+};
+
+
+int main()
+{
+    auto app = drogon::create();
+
+    // class function
+    app->registerHandler("/api/v1/handle1/{}/{}/?p3={}&p4={}", &A::handle);
+    app->registerHandler(
+        "/api/v1/handle11/{int p1}/{string p2}/?p3={string p3}&p4={int p4}",
+        &A::staticHandle);
+
+    // functor example
+    B b;
+    app->registerHandler("/api/v1/handle3/{1}/{2}", b);
+
+    // lambda
+    app->registerHandler("/test?username={name}",
+                    [](const HttpRequestPtr& req,
+                       const HttpOperation& op,
+                       std::function<void (const HttpResponsePtr &)> &&callback,
+                       const std::string &name)
+                    {
+                        // ...
+                        auto resp = op.newHttpJsonResponse(json);
+                        callback(resp);
+                    },
+                    {Get,"LoginFilter"});
+
+    auto ctrlPtr = std::make_shared<CustomCtrl>("Hi");
+    app->registerController(ctrlPtr);
+}
+
+```
+* **customErrorHandlerFunction** prototype changed
+```c++
+// using customErrorHandlerFunction =
+//     std::function<HttpResponsePtr(HttpStatusCode,
+//                                   const HttpRequestPtr &,
+//                                   const HttpOperation &)>;
+
+// virtual HttpAppFramework &setCustomErrorHandler(
+//         customErrorHandlerFunction &&resp_generator) = 0;
+int main()
+{
+    auto app = drogon::create();
+    app->setCustomErrorHandler(
+        [] (HttpStatusCode sc,
+            const HttpRequestPtr& req,
+            const HttpOperation& op){
+        auto resp = op.newHttpResponse();
+        resp->setStatusCode(sc);
+        resp->setBody(req->getPath());
+        return resp;
+    });
+    app->run();
+}
+
+```
+* Add `registerController`, `registerFilter` helper
+```c++
+template <typename T, typename... Args>
+HttpAppFramework &registerController(Args &&...args)
+{
+    auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+    return registerController(ptr);
+}
+
+// ...
+app->registerController<CustomCtrl>("Hi");
+app->registerFilter<DigestAuthFilter>(config_credentials, realm, opaque);
+```
 ### Overview
 **Drogon** is a C++14/17-based HTTP application framework. Drogon can be used to easily build various types of web application server programs using C++. **Drogon** is the name of a dragon in the American TV series "Game of Thrones" that I really like.
 

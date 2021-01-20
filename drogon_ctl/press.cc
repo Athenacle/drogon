@@ -215,7 +215,8 @@ void press::createRequestAndClients()
     for (size_t i = 0; i < numOfConnections_; ++i)
     {
         auto client =
-            HttpClient::newHttpClient(host_, loopPool_->getNextLoop());
+            app_->getOperations().newHttpClient(host_,
+                                                loopPool_->getNextLoop());
         client->enableCookies();
         clients_.push_back(client);
     }
@@ -228,7 +229,7 @@ void press::sendRequest(const HttpClientPtr &client)
     {
         return;
     }
-    auto request = HttpRequest::newHttpRequest();
+    auto request = app_->getOperations().newHttpRequest();
     request->setPath(path_);
     request->setMethod(Get);
     // std::cout << "send!" << std::endl;

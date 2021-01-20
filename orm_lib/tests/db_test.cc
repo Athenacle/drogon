@@ -28,7 +28,7 @@ using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 #define RESET "\033[0m"
-#define RED "\033[31m"   /* Red */
+#define RED "\033[31m" /* Red */
 #define GREEN "\033[32m" /* Green */
 
 constexpr int postgre_tests = 44;

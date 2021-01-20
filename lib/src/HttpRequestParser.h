@@ -24,9 +24,12 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 class HttpRequestParser : public trantor::NonCopyable,
                           public std::enable_shared_from_this<HttpRequestParser>
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
     enum class HttpRequestParseStatus
     {
@@ -40,7 +43,8 @@ class HttpRequestParser : public trantor::NonCopyable,
         kGotAll,
     };
 
-    explicit HttpRequestParser(const trantor::TcpConnectionPtr &connPtr);
+    explicit HttpRequestParser(HttpAppFrameworkImpl *app,
+                               const trantor::TcpConnectionPtr &connPtr);
 
     // return false if any error
     bool parseRequest(trantor::MsgBuffer *buf);

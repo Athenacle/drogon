@@ -12,6 +12,7 @@
  *
  */
 
+#include "HttpAppFrameworkImpl.h"
 #include "HttpSimpleControllersRouter.h"
 #include "HttpRequestImpl.h"
 #include "HttpResponseImpl.h"
@@ -53,16 +54,16 @@ void HttpSimpleControllersRouter::registerHttpSimpleController(
         }
     }
     auto &item = simpleCtrlMap_[path];
-    auto binder = std::make_shared<CtrlBinder>();
+    auto binder = std::make_shared<CtrlBinder>(app_);
     binder->controllerName_ = ctrlName;
     binder->filterNames_ = filters;
-    drogon::app().getLoop()->queueInLoop([binder, ctrlName]() {
+    app_->getLoop()->queueInLoop([binder, ctrlName, this]() {
         auto &object_ = DrClassMap::getSingleInstance(ctrlName);
         auto controller =
             std::dynamic_pointer_cast<HttpSimpleControllerBase>(object_);
         binder->controller_ = controller;
         // Recreate this with the correct number of threads.
-        binder->responseCache_ = IOThreadStorage<HttpResponsePtr>();
+        binder->responseCache_ = IOThreadStorage<HttpResponsePtr>(app_);
     });
 
     if (validMethods.size() > 0)
@@ -107,11 +108,14 @@ void HttpSimpleControllersRouter::route(
             // Invalid Http Method
             if (req->method() != Options)
             {
-                callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+                callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                                       req,
+                                                       op_));
             }
             else
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(
+                    app_->getCustomErrorHandler()(k403Forbidden, req, op_));
             }
             return;
         }
@@ -227,6 +231,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
 
         controller->asyncHandleHttpRequest(
             req,
+            op_,
             [this, req, callback = std::move(callback), &ctrlBinderPtr](
                 const HttpResponsePtr &resp) {
                 auto newResp = resp;
@@ -258,7 +263,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
     {
         const std::string &ctrlName = ctrlBinderPtr->controllerName_;
         LOG_ERROR << "can't find controller " << ctrlName;
-        auto res = drogon::HttpResponse::newNotFoundResponse();
+        auto res = drogon::HttpResponse::newNotFoundResponse(app_);
         invokeCallback(callback, req, res);
     }
 }
@@ -311,7 +316,7 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
 {
     if (req->method() == Options)
     {
-        auto resp = HttpResponse::newHttpResponse();
+        auto resp = HttpResponse::newHttpResponse(app_);
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         std::string methods = "OPTIONS,";
         if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
@@ -376,10 +381,8 @@ void HttpSimpleControllersRouter::doPreHandlingAdvices(
             0,
             req,
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr](const HttpResponsePtr &resp) {
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  *callbackPtr);
+                [req, callbackPtr, this](const HttpResponsePtr &resp) {
+                    app_->callCallback(req, resp, *callbackPtr);
                 }),
             [this, ctrlBinderPtr, req, callbackPtr]() {
                 doControllerHandler(ctrlBinderPtr,
@@ -398,5 +401,5 @@ void HttpSimpleControllersRouter::invokeCallback(
     {
         advice(req, resp);
     }
-    HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+    app_->callCallback(req, resp, callback);
 }

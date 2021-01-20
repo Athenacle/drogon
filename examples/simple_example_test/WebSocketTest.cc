@@ -9,8 +9,10 @@ using namespace std::chrono_literals;
 
 int main(int argc, char *argv[])
 {
-    auto wsPtr = WebSocketClient::newWebSocketClient("127.0.0.1", 8848);
-    auto req = HttpRequest::newHttpRequest();
+    auto app = drogon::create();
+    auto &op = app->getOperations();
+    auto wsPtr = op.newWebSocketClient("127.0.0.1", 8848);
+    auto req = op.newHttpRequest();
     req->setPath("/chat");
     bool continually = true;
     if (argc > 1)
@@ -20,24 +22,24 @@ int main(int argc, char *argv[])
         else if (std::string(argv[1]) == "-p")
         {
             // Connect to a public web socket server.
-            wsPtr =
-                WebSocketClient::newWebSocketClient("wss://echo.websocket.org");
+            wsPtr = op.newWebSocketClient("wss://echo.websocket.org");
             req->setPath("/");
         }
     }
-    wsPtr->setMessageHandler([continually](const std::string &message,
-                                           const WebSocketClientPtr &wsPtr,
-                                           const WebSocketMessageType &type) {
-        std::cout << "new message:" << message << std::endl;
-        if (type == WebSocketMessageType::Pong)
-        {
-            std::cout << "recv a pong" << std::endl;
-            if (!continually)
+    wsPtr->setMessageHandler(
+        [continually, app](const std::string &message,
+                           const WebSocketClientPtr &wsPtr,
+                           const WebSocketMessageType &type) {
+            std::cout << "new message:" << message << std::endl;
+            if (type == WebSocketMessageType::Pong)
             {
-                app().getLoop()->quit();
+                std::cout << "recv a pong" << std::endl;
+                if (!continually)
+                {
+                    app->getLoop()->quit();
+                }
             }
-        }
-    });
+        });
     wsPtr->setConnectionClosedHandler([](const WebSocketClientPtr &wsPtr) {
         std::cout << "ws closed!" << std::endl;
     });
@@ -61,12 +63,12 @@ int main(int argc, char *argv[])
                                    }
                                }
                            });
-    app().getLoop()->runAfter(5.0, [continually]() {
+    app->getLoop()->runAfter(5.0, [continually]() {
         if (!continually)
         {
             exit(1);
         }
     });
-    app().setLogLevel(trantor::Logger::kTrace);
-    app().run();
+    app->setLogLevel(trantor::Logger::kTrace);
+    app->run();
 }

@@ -149,10 +149,12 @@ set(DROGON_SOURCES
     lib/src/DrTemplateBase.cc
     lib/src/FiltersFunction.cc
     lib/src/HttpAppFrameworkImpl.cc
+    lib/src/HttpAppFrameworkManager.cc
     lib/src/HttpClientImpl.cc
     lib/src/HttpControllersRouter.cc
     lib/src/HttpFileImpl.cc
     lib/src/HttpFileUploadRequest.cc
+    lib/src/HttpOperation.cc
     lib/src/HttpRequestImpl.cc
     lib/src/HttpRequestParser.cc
     lib/src/HttpResponseImpl.cc
@@ -380,10 +382,12 @@ set(DROGON_HEADERS
     lib/inc/drogon/DrTemplate.h
     lib/inc/drogon/DrTemplateBase.h
     lib/inc/drogon/HttpAppFramework.h
+    lib/inc/drogon/HttpAppFrameworkManager.h
     lib/inc/drogon/HttpBinder.h
     lib/inc/drogon/HttpClient.h
     lib/inc/drogon/HttpController.h
     lib/inc/drogon/HttpFilter.h
+    lib/inc/drogon/HttpOperation.h
     lib/inc/drogon/HttpRequest.h
     lib/inc/drogon/HttpResponse.h
     lib/inc/drogon/HttpSimpleController.h

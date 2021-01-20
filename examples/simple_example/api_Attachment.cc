@@ -4,13 +4,17 @@
 using namespace api;
 // add definition of your processing function here
 void Attachment::get(const HttpRequestPtr &req,
+                     const HttpOperation &op,
                      std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto resp = HttpResponse::newHttpViewResponse("FileUpload", HttpViewData());
+    auto resp = HttpResponse::newHttpViewResponse(req->getApp(),
+                                                  "FileUpload",
+                                                  HttpViewData());
     callback(resp);
 }
 
 void Attachment::upload(const HttpRequestPtr &req,
+                        const HttpOperation &op,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
     MultiPartParser fileUpload;
@@ -38,7 +42,7 @@ void Attachment::upload(const HttpRequestPtr &req,
         {
             json[param.first] = param.second;
         }
-        auto resp = HttpResponse::newHttpJsonResponse(json);
+        auto resp = HttpResponse::newHttpJsonResponse(req->getApp(), json);
         callback(resp);
         return;
     }
@@ -46,14 +50,18 @@ void Attachment::upload(const HttpRequestPtr &req,
     // LOG_DEBUG<<req->con
     Json::Value json;
     json["result"] = "failed";
-    auto resp = HttpResponse::newHttpJsonResponse(json);
+    auto resp = HttpResponse::newHttpJsonResponse(req->getApp(), json);
     callback(resp);
 }
 
 void Attachment::download(
     const HttpRequestPtr &req,
+    const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto resp = HttpResponse::newFileResponse("./drogon.jpg", "", CT_IMAGE_JPG);
+    auto resp = HttpResponse::newFileResponse(req->getApp(),
+                                              "./drogon.jpg",
+                                              "",
+                                              CT_IMAGE_JPG);
     callback(resp);
 }

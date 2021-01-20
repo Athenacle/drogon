@@ -24,6 +24,9 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
+class HttpOperation;
+
 /// Abstract class for webapp developer to get or set the Http response;
 class HttpResponse;
 using HttpResponsePtr = std::shared_ptr<HttpResponse>;
@@ -47,25 +50,39 @@ T fromResponse(const HttpResponse &resp)
  * the template for a particular type.
  */
 template <typename T>
-HttpResponsePtr toResponse(T &&)
+HttpResponsePtr toResponse(HttpAppFrameworkImpl *, T &&)
 {
     LOG_ERROR << "You must specialize the toResponse template for the type of "
               << DrClassMap::demangle(typeid(T).name());
     exit(1);
 }
 template <>
-HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson);
+HttpResponsePtr toResponse<const Json::Value &>(HttpAppFrameworkImpl *app,
+                                                const Json::Value &pJson);
 template <>
-HttpResponsePtr toResponse(Json::Value &&pJson);
+HttpResponsePtr toResponse(HttpAppFrameworkImpl *app, Json::Value &&pJson);
 template <>
-inline HttpResponsePtr toResponse<Json::Value &>(Json::Value &pJson)
+inline HttpResponsePtr toResponse<Json::Value &>(HttpAppFrameworkImpl *app,
+                                                 Json::Value &pJson)
 {
-    return toResponse((const Json::Value &)pJson);
+    return toResponse(app, (const Json::Value &)pJson);
 }
 
 class HttpResponse
 {
+    friend class HttpOperation;
+
+  protected:
+    HttpAppFrameworkImpl *app_;
+
   public:
+    HttpResponse() = default;
+
+    auto getApp() const
+    {
+        return app_;
+    }
+
     /**
      * @brief This template enables automatic type conversion. For using this
      * template, user must specialize the fromResponse template. For example a
@@ -311,13 +328,15 @@ class HttpResponse
 
     /// Create a normal response with a status code of 200ok and a content type
     /// of text/html.
-    static HttpResponsePtr newHttpResponse();
+    static HttpResponsePtr newHttpResponse(HttpAppFrameworkImpl *);
     /// Create a response which returns a 404 page.
-    static HttpResponsePtr newNotFoundResponse();
+    static HttpResponsePtr newNotFoundResponse(HttpAppFrameworkImpl *);
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
-    static HttpResponsePtr newHttpJsonResponse(const Json::Value &data);
-    static HttpResponsePtr newHttpJsonResponse(Json::Value &&data);
+    static HttpResponsePtr newHttpJsonResponse(HttpAppFrameworkImpl *,
+                                               const Json::Value &data);
+    static HttpResponsePtr newHttpJsonResponse(HttpAppFrameworkImpl *,
+                                               Json::Value &&data);
     /// Create a response that returns a page rendered by a view named
     /// viewName.
     /**
@@ -326,6 +345,7 @@ class HttpResponse
      * @note For more details, see the wiki pages, the "View" section.
      */
     static HttpResponsePtr newHttpViewResponse(
+        HttpAppFrameworkImpl *,
         const std::string &viewName,
         const HttpViewData &data = HttpViewData());
 
@@ -337,6 +357,7 @@ class HttpResponse
      * it to one of the 301, 302, 303, 307, ...
      */
     static HttpResponsePtr newRedirectionResponse(
+        HttpAppFrameworkImpl *,
         const std::string &location,
         HttpStatusCode status = k302Found);
 
@@ -349,6 +370,7 @@ class HttpResponse
      * drogon based on the file extension.
      */
     static HttpResponsePtr newFileResponse(
+        HttpAppFrameworkImpl *,
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
@@ -358,9 +380,10 @@ class HttpResponse
      * users must specialize the toResponse template.
      */
     template <typename T>
-    static HttpResponsePtr newCustomHttpResponse(T &&obj)
+    static HttpResponsePtr newCustomHttpResponse(HttpAppFrameworkImpl *app,
+                                                 T &&obj)
     {
-        return toResponse(std::forward<T>(obj));
+        return toResponse(app, std::forward<T>(obj));
     }
 
     virtual ~HttpResponse()
@@ -376,15 +399,18 @@ class HttpResponse
                                                    size_t typeStringLength) = 0;
 };
 template <>
-inline HttpResponsePtr toResponse<const Json::Value &>(const Json::Value &pJson)
+inline HttpResponsePtr toResponse<const Json::Value &>(
+    HttpAppFrameworkImpl *app,
+    const Json::Value &pJson)
 {
-    return HttpResponse::newHttpJsonResponse(pJson);
+    return HttpResponse::newHttpJsonResponse(app, pJson);
 }
 
 template <>
-inline HttpResponsePtr toResponse(Json::Value &&pJson)
+inline HttpResponsePtr toResponse(HttpAppFrameworkImpl *app,
+                                  Json::Value &&pJson)
 {
-    return HttpResponse::newHttpJsonResponse(std::move(pJson));
+    return HttpResponse::newHttpJsonResponse(app, std::move(pJson));
 }
 
 template <>

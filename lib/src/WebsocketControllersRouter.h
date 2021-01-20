@@ -31,15 +31,19 @@ namespace drogon
 class HttpAppFrameworkImpl;
 class WebsocketControllersRouter : public trantor::NonCopyable
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
     WebsocketControllersRouter(
+        HttpAppFrameworkImpl *app,
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              AdviceCallback &&,
                                              AdviceChainCallback &&)>>
             &postRoutingAdvices,
         const std::vector<std::function<void(const HttpRequestPtr &)>>
             &postRoutingObservers)
-        : postRoutingAdvices_(postRoutingAdvices),
+        : app_(app),
+          postRoutingAdvices_(postRoutingAdvices),
           postRoutingObservers_(postRoutingObservers)
     {
     }

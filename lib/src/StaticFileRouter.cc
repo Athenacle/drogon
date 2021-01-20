@@ -35,7 +35,8 @@ void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioloops)
 {
     // Max timeout up to about 70 days;
     staticFilesCacheMap_ = decltype(staticFilesCacheMap_)(
-        new IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>);
+        new IOThreadStorage<std::unique_ptr<CacheMap<std::string, char>>>(
+            app_));
     staticFilesCacheMap_->init(
         [&ioloops](std::unique_ptr<CacheMap<std::string, char>> &mapPtr,
                    size_t i) {
@@ -44,10 +45,10 @@ void StaticFileRouter::init(const std::vector<trantor::EventLoop *> &ioloops)
                 new CacheMap<std::string, char>(ioloops[i], 1.0, 4, 50));
         });
     staticFilesCache_ = decltype(staticFilesCache_)(
-        new IOThreadStorage<
-            std::unordered_map<std::string, HttpResponsePtr>>{});
-    ioLocationsPtr_ =
-        decltype(ioLocationsPtr_)(new IOThreadStorage<std::vector<Location>>);
+        new IOThreadStorage<std::unordered_map<std::string, HttpResponsePtr>>{
+            app_});
+    ioLocationsPtr_ = decltype(ioLocationsPtr_)(
+        new IOThreadStorage<std::vector<Location>>(app_));
     for (auto *loop : ioloops)
     {
         loop->queueInLoop([this] { **ioLocationsPtr_ = locations_; });
@@ -62,12 +63,16 @@ void StaticFileRouter::route(
     if (path.find("/../") != std::string::npos)
     {
         // Downloading files from the parent folder is forbidden.
-        callback(app().getCustomErrorHandler()(k403Forbidden));
+        callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                               req,
+                                               app_->getOperations()));
         return;
     }
     if (req->method() != Get)
     {
-        callback(app().getCustomErrorHandler()(k405MethodNotAllowed));
+        callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                               req,
+                                               app_->getOperations()));
         return;
     }
     auto lPath = path;
@@ -87,15 +92,13 @@ void StaticFileRouter::route(
                 else
                 {
                     location.realLocation_ =
-                        HttpAppFrameworkImpl::instance().getDocumentRoot() +
-                        location.alias_;
+                        app_->getDocumentRoot() + location.alias_;
                 }
             }
             else
             {
                 location.realLocation_ =
-                    HttpAppFrameworkImpl::instance().getDocumentRoot() +
-                    location.uriPrefix_;
+                    app_->getDocumentRoot() + location.uriPrefix_;
             }
             if (location.realLocation_[location.realLocation_.length() - 1] !=
                 '/')
@@ -118,7 +121,9 @@ void StaticFileRouter::route(
             auto pos = restOfThePath.rfind('/');
             if (pos != 0 && pos != string_view::npos && !location.isRecursive_)
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                                       req,
+                                                       app_->getOperations()));
                 return;
             }
             std::string filePath =
@@ -127,7 +132,7 @@ void StaticFileRouter::route(
             struct stat fileStat;
             if (stat(filePath.c_str(), &fileStat) != 0)
             {
-                callback(HttpResponse::newNotFoundResponse());
+                callback(HttpResponse::newNotFoundResponse(app_));
                 return;
             }
             if (S_ISDIR(fileStat.st_mode))
@@ -139,7 +144,8 @@ void StaticFileRouter::route(
                 }
                 else
                 {
-                    callback(app().getCustomErrorHandler()(k403Forbidden));
+                    callback(app_->getCustomErrorHandler()(
+                        k403Forbidden, req, app_->getOperations()));
                     return;
                 }
             }
@@ -150,7 +156,8 @@ void StaticFileRouter::route(
                     pos = restOfThePath.rfind('.');
                     if (pos == string_view::npos)
                     {
-                        callback(app().getCustomErrorHandler()(k403Forbidden));
+                        callback(app_->getCustomErrorHandler()(
+                            k403Forbidden, req, app_->getOperations()));
                         return;
                     }
                     std::string extension{restOfThePath.data() + pos + 1,
@@ -161,7 +168,8 @@ void StaticFileRouter::route(
                                    tolower);
                     if (fileTypeSet_.find(extension) == fileTypeSet_.end())
                     {
-                        callback(app().getCustomErrorHandler()(k403Forbidden));
+                        callback(app_->getCustomErrorHandler()(
+                            k403Forbidden, req, app_->getOperations()));
                         return;
                     }
                 }
@@ -200,8 +208,7 @@ void StaticFileRouter::route(
         }
     }
 
-    std::string directoryPath =
-        HttpAppFrameworkImpl::instance().getDocumentRoot() + path;
+    std::string directoryPath = app_->getDocumentRoot() + path;
     struct stat fileStat;
     if (stat(directoryPath.c_str(), &fileStat) == 0)
     {
@@ -216,7 +223,9 @@ void StaticFileRouter::route(
             }
             else
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                                       req,
+                                                       app_->getOperations()));
                 return;
             }
         }
@@ -226,7 +235,9 @@ void StaticFileRouter::route(
             auto pos = path.rfind('.');
             if (pos == std::string::npos)
             {
-                callback(app().getCustomErrorHandler()(k403Forbidden));
+                callback(app_->getCustomErrorHandler()(k403Forbidden,
+                                                       req,
+                                                       app_->getOperations()));
                 return;
             }
             std::string filetype = lPath.substr(pos + 1);
@@ -239,7 +250,7 @@ void StaticFileRouter::route(
             }
         }
     }
-    callback(HttpResponse::newNotFoundResponse());
+    callback(HttpResponse::newNotFoundResponse(app_));
 }
 
 void StaticFileRouter::sendStaticFileResponse(
@@ -248,6 +259,7 @@ void StaticFileRouter::sendStaticFileResponse(
     const std::function<void(const HttpResponsePtr &)> &callback,
     const string_view &defaultContentType)
 {  // find cached response
+    assert(app_ == req->getApp());
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
     auto iter = cacheMap.find(filePath);
@@ -270,12 +282,10 @@ void StaticFileRouter::sendStaticFileResponse(
                 req->getHeaderBy("if-modified-since"))
             {
                 std::shared_ptr<HttpResponseImpl> resp =
-                    std::make_shared<HttpResponseImpl>();
+                    std::make_shared<HttpResponseImpl>(app_);
                 resp->setStatusCode(k304NotModified);
                 resp->setContentTypeCode(CT_NONE);
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              resp,
-                                                              callback);
+                app_->callCallback(req, resp, callback);
                 return;
             }
         }
@@ -306,18 +316,16 @@ void StaticFileRouter::sendStaticFileResponse(
                 {
                     LOG_TRACE << "not Modified!";
                     std::shared_ptr<HttpResponseImpl> resp =
-                        std::make_shared<HttpResponseImpl>();
+                        std::make_shared<HttpResponseImpl>(app_);
                     resp->setStatusCode(k304NotModified);
                     resp->setContentTypeCode(CT_NONE);
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  callback);
+                    app_->callCallback(req, resp, callback);
                     return;
                 }
             }
             else
             {
-                callback(HttpResponse::newNotFoundResponse());
+                callback(HttpResponse::newNotFoundResponse(app_));
                 return;
             }
         }
@@ -325,9 +333,7 @@ void StaticFileRouter::sendStaticFileResponse(
     if (cachedResp)
     {
         LOG_TRACE << "Using file cache";
-        HttpAppFrameworkImpl::instance().callCallback(req,
-                                                      cachedResp,
-                                                      callback);
+        app_->callCallback(req, cachedResp, callback);
         return;
     }
     if (!fileExists)
@@ -336,7 +342,7 @@ void StaticFileRouter::sendStaticFileResponse(
         if (stat(filePath.c_str(), &fileStat) != 0 ||
             !S_ISREG(fileStat.st_mode))
         {
-            callback(HttpResponse::newNotFoundResponse());
+            callback(HttpResponse::newNotFoundResponse(app_));
             return;
         }
     }
@@ -351,10 +357,8 @@ void StaticFileRouter::sendStaticFileResponse(
         if (stat(brFileName.c_str(), &filestat) == 0 &&
             S_ISREG(filestat.st_mode))
         {
-            resp =
-                HttpResponse::newFileResponse(brFileName,
-                                              "",
-                                              drogon::getContentType(filePath));
+            resp = HttpResponse::newFileResponse(
+                app_, brFileName, "", drogon::getContentType(filePath));
             resp->addHeader("Content-Encoding", "br");
         }
     }
@@ -367,15 +371,13 @@ void StaticFileRouter::sendStaticFileResponse(
         if (stat(gzipFileName.c_str(), &filestat) == 0 &&
             S_ISREG(filestat.st_mode))
         {
-            resp =
-                HttpResponse::newFileResponse(gzipFileName,
-                                              "",
-                                              drogon::getContentType(filePath));
+            resp = HttpResponse::newFileResponse(
+                app_, gzipFileName, "", drogon::getContentType(filePath));
             resp->addHeader("Content-Encoding", "gzip");
         }
     }
     if (!resp)
-        resp = HttpResponse::newFileResponse(filePath);
+        resp = HttpResponse::newFileResponse(app_, filePath);
     if (resp->statusCode() != k404NotFound)
     {
         if (resp->getContentType() == CT_APPLICATION_OCTET_STREAM &&
@@ -411,7 +413,7 @@ void StaticFileRouter::sendStaticFileResponse(
                     staticFilesCache_->getThreadData().erase(filePath);
                 });
         }
-        HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+        app_->callCallback(req, resp, callback);
         return;
     }
     callback(resp);

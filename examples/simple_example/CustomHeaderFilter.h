@@ -17,6 +17,7 @@ class CustomHeaderFilter : public HttpFilter<CustomHeaderFilter, false>
     {
     }
     virtual void doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&fcb,
                           FilterChainCallback &&fccb) override;
 

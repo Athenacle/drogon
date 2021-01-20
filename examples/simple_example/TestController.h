@@ -4,11 +4,13 @@
 using namespace drogon;
 namespace example
 {
-class TestController : public drogon::HttpSimpleController<TestController>
+class TestController
+    : public drogon::HttpSimpleController<TestController, false>
 {
   public:
     virtual void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
+        const HttpOperation &op,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
     PATH_LIST_BEGIN
     // list path definations here;
@@ -18,7 +20,11 @@ class TestController : public drogon::HttpSimpleController<TestController>
     PATH_ADD("/tpost", Post, Options);
     PATH_ADD("/slow", "TimeFilter", Get);
     PATH_LIST_END
-    TestController()
+
+    TestController(HttpAppFramework *app)
+        : drogon::HttpSimpleController<TestController, false>(
+              reinterpret_cast<HttpAppFrameworkImpl *>(app)),
+          threadIndex_(app)
     {
         LOG_DEBUG << "TestController constructor";
     }

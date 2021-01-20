@@ -60,14 +60,9 @@ class HttpAppFramework : public trantor::NonCopyable
 {
   public:
     virtual ~HttpAppFramework();
-    /// Get the instance of HttpAppFramework
-    /**
-     * HttpAppFramework works at singleton mode, so any calling of this
-     * method gets the same instance;
-     * Calling drogon::HttpAppFramework::instance()
-     * can be replaced by a simple interface -- drogon::app()
-     */
-    static HttpAppFramework &instance();
+
+    static std::shared_ptr<HttpAppFramework> create();
+    static void destroy(const std::shared_ptr<HttpAppFramework> &);
 
     /// Run the event loop
     /**
@@ -125,13 +120,18 @@ class HttpAppFramework : public trantor::NonCopyable
     virtual HttpAppFramework &setCustom404Page(const HttpResponsePtr &resp,
                                                bool set404 = true) = 0;
 
+    using customErrorHandlerFunction =
+        std::function<HttpResponsePtr(HttpStatusCode,
+                                      const HttpRequestPtr &,
+                                      const HttpOperation &)>;
+
     /// Set custom error handler
     /**
      * @param resp_generator is invoked when an error in the framework needs to
      * be sent to the client to provide a custom layout.
      */
     virtual HttpAppFramework &setCustomErrorHandler(
-        std::function<HttpResponsePtr(HttpStatusCode)> &&resp_generator) = 0;
+        customErrorHandlerFunction &&resp_generator) = 0;
 
     /// Get custom error handler
     /**
@@ -139,8 +139,7 @@ class HttpAppFramework : public trantor::NonCopyable
      * setCustomErrorHandler. If none was provided, the default error handler is
      * returned.
      */
-    virtual const std::function<HttpResponsePtr(HttpStatusCode)>
-        &getCustomErrorHandler() const = 0;
+    virtual const customErrorHandlerFunction &getCustomErrorHandler() const = 0;
 
     /// Get the plugin object registered in the framework
     /**
@@ -551,8 +550,15 @@ class HttpAppFramework : public trantor::NonCopyable
                       "automatically by drogon cannot be "
                       "registered here");
         DrClassMap::setSingleInstance(ctrlPtr);
-        T::initPathRouting();
+        T::initPathRouting(this);
         return *this;
+    }
+
+    template <typename T, typename... Args>
+    HttpAppFramework &registerController(Args &&...args)
+    {
+        auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+        return registerController(ptr);
     }
 
     /// Register filter objects created and initialized by the user
@@ -570,6 +576,13 @@ class HttpAppFramework : public trantor::NonCopyable
                       "registered here");
         DrClassMap::setSingleInstance(filterPtr);
         return *this;
+    }
+
+    template <typename T, typename... Args>
+    HttpAppFramework &registerFilter(Args &&...args)
+    {
+        auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
+        return registerFilter(ptr);
     }
 
     /// Forward the http request
@@ -1246,6 +1259,8 @@ class HttpAppFramework : public trantor::NonCopyable
      */
     virtual bool reusePort() const = 0;
 
+    virtual const HttpOperation &getOperations() const = 0;
+
   private:
     virtual void registerHttpController(
         const std::string &pathPattern,
@@ -1259,12 +1274,19 @@ class HttpAppFramework : public trantor::NonCopyable
         const std::vector<HttpMethod> &validMethods,
         const std::vector<std::string> &filters,
         const std::string &handlerName) = 0;
+
+  protected:
+    HttpOperation *op_;
 };
 
-/// A wrapper of the instance() method
-inline HttpAppFramework &app()
+inline std::shared_ptr<HttpAppFramework> create()
 {
-    return HttpAppFramework::instance();
+    return HttpAppFramework::create();
+}
+
+inline void destroy(const std::shared_ptr<HttpAppFramework> &impl)
+{
+    HttpAppFramework::destroy(impl);
 }
 
 }  // namespace drogon

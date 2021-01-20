@@ -8,6 +8,7 @@
 #include <drogon/drogon_callbacks.h>
 #include <drogon/plugins/Plugin.h>
 #include <regex>
+#include <drogon/HttpAppFramework.h>
 
 namespace drogon
 {
@@ -42,6 +43,8 @@ namespace plugin
  */
 class SecureSSLRedirector : public drogon::Plugin<SecureSSLRedirector>
 {
+    HttpAppFramework *app_;
+
   public:
     SecureSSLRedirector()
     {

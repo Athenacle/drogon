@@ -251,7 +251,7 @@ void WebSocketClientImpl::onRecvMessage(
 #endif
         upgraded_ = true;
         websockConnPtr_ =
-            std::make_shared<WebSocketConnectionImpl>(connPtr, false);
+            std::make_shared<WebSocketConnectionImpl>(connPtr, app_, false);
         auto thisPtr = shared_from_this();
         websockConnPtr_->setMessageCallback(
             [thisPtr](std::string &&message,
@@ -414,27 +414,32 @@ void WebSocketClientImpl::connectToServer(
     }
 }
 
-WebSocketClientPtr WebSocketClient::newWebSocketClient(const std::string &ip,
-                                                       uint16_t port,
-                                                       bool useSSL,
-                                                       trantor::EventLoop *loop,
-                                                       bool useOldTLS)
+WebSocketClientPtr WebSocketClient::newWebSocketClient(
+    const std::string &ip,
+    uint16_t port,
+    HttpAppFrameworkImpl *app,
+    bool useSSL,
+    trantor::EventLoop *loop,
+    bool useOldTLS)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
-    return std::make_shared<WebSocketClientImpl>(
-        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
+    auto ret = std::make_shared<WebSocketClientImpl>(
+        loop == nullptr ? app->getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
         useOldTLS);
+    ret->app_ = app;
+    return ret;
 }
 
 WebSocketClientPtr WebSocketClient::newWebSocketClient(
     const std::string &hostString,
+    HttpAppFrameworkImpl *app,
     trantor::EventLoop *loop,
     bool useOldTLS)
 {
-    return std::make_shared<WebSocketClientImpl>(
-        loop == nullptr ? HttpAppFrameworkImpl::instance().getLoop() : loop,
-        hostString,
-        useOldTLS);
+    auto ret = std::make_shared<WebSocketClientImpl>(
+        loop == nullptr ? app->getLoop() : loop, hostString, useOldTLS);
+    ret->app_ = app;
+    return ret;
 }

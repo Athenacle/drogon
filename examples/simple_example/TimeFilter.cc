@@ -5,6 +5,7 @@
 #include "TimeFilter.h"
 #define VDate "visitDate"
 void TimeFilter::doFilter(const HttpRequestPtr &req,
+                          const HttpOperation &op,
                           FilterCallback &&cb,
                           FilterChainCallback &&ccb)
 {
@@ -12,7 +13,7 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
     if (!req->session())
     {
         // no session support by framework,pls enable session
-        auto resp = HttpResponse::newNotFoundResponse();
+        auto resp = op.newNotFoundResponse();
         cb(resp);
         return;
     }
@@ -36,7 +37,7 @@ void TimeFilter::doFilter(const HttpRequestPtr &req,
             Json::Value json;
             json["result"] = "error";
             json["message"] = "Access interval should be at least 10 seconds";
-            auto res = HttpResponse::newHttpJsonResponse(json);
+            auto res = op.newHttpJsonResponse(json);
             cb(res);
             return;
         }

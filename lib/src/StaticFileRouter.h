@@ -27,7 +27,12 @@ namespace drogon
 {
 class StaticFileRouter
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
+    explicit StaticFileRouter(HttpAppFrameworkImpl *app) : app_(app)
+    {
+    }
     void route(const HttpRequestImplPtr &req,
                std::function<void(const HttpResponsePtr &)> &&callback);
     void setFileTypes(const std::vector<std::string> &types);

@@ -2,6 +2,7 @@
 #include <json/json.h>
 void JsonTestController::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
+    const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     Json::Value json;
@@ -17,7 +18,7 @@ void JsonTestController::asyncHandleHttpRequest(
         array.append(user);
     }
     json["rows"] = array;
-    auto resp = HttpResponse::newHttpJsonResponse(json);
+    auto resp = op.newHttpJsonResponse(json);
     assert(resp->jsonObject().get());
     callback(resp);
 }

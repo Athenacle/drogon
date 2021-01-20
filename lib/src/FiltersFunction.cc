@@ -32,20 +32,21 @@ static void doFilterChains(
         &callbackPtr,
     std::function<void()> &&missCallback)
 {
+    auto app = req->getApp();
     if (index < filters.size())
     {
         auto &filter = filters[index];
         filter->doFilter(
             req,
-            [req, callbackPtr](const HttpResponsePtr &res) {
-                HttpAppFrameworkImpl::instance().callCallback(req,
-                                                              res,
-                                                              *callbackPtr);
+            app->getOperations(),
+            [req, callbackPtr, app](const HttpResponsePtr &res) {
+                app->callCallback(req, res, *callbackPtr);
             },
             [index,
              req,
              callbackPtr,
              &filters,
+             &app,
              missCallback = std::move(missCallback)]() mutable {
                 doFilterChains(filters,
                                index + 1,

@@ -29,11 +29,11 @@ void HttpControllersRouter::doWhenNoHandlerFound(
     const HttpRequestImplPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    if (req->path() == "/" &&
-        !HttpAppFrameworkImpl::instance().getHomePage().empty())
+    auto app = req->getApp();
+    if (req->path() == "/" && !app->getHomePage().empty())
     {
-        req->setPath("/" + HttpAppFrameworkImpl::instance().getHomePage());
-        HttpAppFrameworkImpl::instance().forward(req, std::move(callback));
+        req->setPath("/" + app->getHomePage());
+        app->forward(req, std::move(callback));
         return;
     }
     fileRouter_.route(req, std::move(callback));
@@ -89,13 +89,13 @@ void HttpControllersRouter::addHttpRegex(
     const std::vector<std::string> &filters,
     const std::string &handlerName)
 {
-    auto binderInfo = std::make_shared<CtrlBinder>();
+    auto binderInfo = std::make_shared<CtrlBinder>(app_);
     binderInfo->filterNames_ = filters;
     binderInfo->handlerName_ = handlerName;
     binderInfo->binderPtr_ = binder;
-    drogon::app().getLoop()->queueInLoop([binderInfo]() {
+    app_->getLoop()->queueInLoop([this, binderInfo]() {
         // Recreate this with the correct number of threads.
-        binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
+        binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>(app_);
     });
     {
         for (auto &router : ctrlVector_)
@@ -355,15 +355,15 @@ void HttpControllersRouter::addHttpPath(
     }
     auto pathParameterPattern =
         std::regex_replace(originPath, regex, "([^/]*)");
-    auto binderInfo = std::make_shared<CtrlBinder>();
+    auto binderInfo = std::make_shared<CtrlBinder>(app_);
     binderInfo->filterNames_ = filters;
     binderInfo->handlerName_ = handlerName;
     binderInfo->binderPtr_ = binder;
     binderInfo->parameterPlaces_ = std::move(places);
     binderInfo->queryParametersPlaces_ = std::move(parametersPlaces);
-    drogon::app().getLoop()->queueInLoop([binderInfo]() {
+    app_->getLoop()->queueInLoop([binderInfo, this]() {
         // Recreate this with the correct number of threads.
-        binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>();
+        binderInfo->responseCache_ = IOThreadStorage<HttpResponsePtr>(app_);
     });
     {
         for (auto &router : ctrlVector_)
@@ -429,12 +429,14 @@ void HttpControllersRouter::route(
                 // Invalid Http Method
                 if (req->method() != Options)
                 {
-                    callback(
-                        app().getCustomErrorHandler()(k405MethodNotAllowed));
+                    callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                                           req,
+                                                           op_));
                 }
                 else
                 {
-                    callback(app().getCustomErrorHandler()(k403Forbidden));
+                    callback(
+                        app_->getCustomErrorHandler()(k403Forbidden, req, op_));
                 }
                 return;
             }
@@ -598,6 +600,7 @@ void HttpControllersRouter::doControllerHandler(
     ctrlBinderPtr->binderPtr_->handleHttpRequest(
         params,
         req,
+        op_,
         [this, req, ctrlBinderPtr, callback = std::move(callback)](
             const HttpResponsePtr &resp) {
             if (resp->expiredTime() >= 0 && resp->statusCode() != k404NotFound)
@@ -630,7 +633,7 @@ void HttpControllersRouter::doPreHandlingAdvices(
 {
     if (req->method() == Options)
     {
-        auto resp = HttpResponse::newHttpResponse();
+        auto resp = HttpResponse::newHttpResponse(app_);
         resp->setContentTypeCode(ContentType::CT_TEXT_PLAIN);
         std::string methods = "OPTIONS,";
         if (routerItem.binders_[Get] && routerItem.binders_[Get]->isCORS_)
@@ -695,10 +698,8 @@ void HttpControllersRouter::doPreHandlingAdvices(
             0,
             req,
             std::make_shared<std::function<void(const HttpResponsePtr &)>>(
-                [req, callbackPtr](const HttpResponsePtr &resp) {
-                    HttpAppFrameworkImpl::instance().callCallback(req,
-                                                                  resp,
-                                                                  *callbackPtr);
+                [req, callbackPtr, this](const HttpResponsePtr &resp) {
+                    app_->callCallback(req, resp, *callbackPtr);
                 }),
             [this,
              ctrlBinderPtr,
@@ -724,5 +725,5 @@ void HttpControllersRouter::invokeCallback(
     {
         advice(req, resp);
     }
-    HttpAppFrameworkImpl::instance().callCallback(req, resp, callback);
+    app_->callCallback(req, resp, callback);
 }

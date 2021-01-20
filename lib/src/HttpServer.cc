@@ -42,13 +42,15 @@ static HttpResponsePtr getCompressedResponse(const HttpRequestImplPtr &req,
                                              const HttpResponsePtr &response,
                                              bool isHeadMethod)
 {
+    auto app = req->getApp();
+    assert(app == response->getApp() || response->getApp() == nullptr);
     if (isHeadMethod ||
         !static_cast<HttpResponseImpl *>(response.get())->shouldBeCompressed())
     {
         return response;
     }
 #ifdef USE_BROTLI
-    if (app().isBrotliEnabled() &&
+    if (app->isBrotliEnabled() &&
         req->getHeaderBy("accept-encoding").find("br") != std::string::npos)
     {
         auto newResp = response;
@@ -73,7 +75,7 @@ static HttpResponsePtr getCompressedResponse(const HttpRequestImplPtr &req,
         return newResp;
     }
 #endif
-    if (app().isGzipEnabled() &&
+    if (app->isGzipEnabled() &&
         req->getHeaderBy("accept-encoding").find("gzip") != std::string::npos)
     {
         auto newResp = response;
@@ -126,20 +128,20 @@ static bool isWebSocket(const HttpRequestImplPtr &req)
 }
 
 static void defaultHttpAsyncCallback(
-    const HttpRequestPtr &,
+    const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &resp)> &&callback)
 {
-    auto resp = HttpResponse::newNotFoundResponse();
+    auto resp = HttpResponse::newNotFoundResponse(req->getApp());
     resp->setCloseConnection(true);
     callback(resp);
 }
 
 static void defaultWebSockAsyncCallback(
-    const HttpRequestPtr &,
+    const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &resp)> &&callback,
     const WebSocketConnectionImplPtr &)
 {
-    auto resp = HttpResponse::newNotFoundResponse();
+    auto resp = HttpResponse::newNotFoundResponse(req->getApp());
     resp->setCloseConnection(true);
     callback(resp);
 }
@@ -150,15 +152,17 @@ static void defaultConnectionCallback(const trantor::TcpConnectionPtr &)
 }
 }  // namespace drogon
 HttpServer::HttpServer(
+    HttpAppFrameworkImpl *app,
     EventLoop *loop,
     const InetAddress &listenAddr,
     const std::string &name,
     const std::vector<std::function<HttpResponsePtr(const HttpRequestPtr &)>>
         &syncAdvices)
+    : app_(app),
 #ifdef __linux__
-    : server_(loop, listenAddr, name.c_str()),
+      server_(loop, listenAddr, name.c_str()),
 #else
-    : server_(loop, listenAddr, name.c_str(), true, app().reusePort()),
+      server_(loop, listenAddr, name.c_str(), true, app->reusePort()),
 #endif
       httpAsyncCallback_(defaultHttpAsyncCallback),
       newWebsocketCallback_(defaultWebSockAsyncCallback),
@@ -189,7 +193,7 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn)
 {
     if (conn->connected())
     {
-        auto parser = std::make_shared<HttpRequestParser>(conn);
+        auto parser = std::make_shared<HttpRequestParser>(app_, conn);
         parser->reset();
         conn->setContext(parser);
         connectionCallback_(conn);
@@ -254,7 +258,7 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn, MsgBuffer *buf)
                     isWebSocket(requestParser->requestImpl()))
                 {
                     auto wsConn =
-                        std::make_shared<WebSocketConnectionImpl>(conn);
+                        std::make_shared<WebSocketConnectionImpl>(conn, app_);
                     newWebsocketCallback_(
                         requestParser->requestImpl(),
                         [conn, wsConn, requestParser](
@@ -296,17 +300,17 @@ void HttpServer::onRequests(
 {
     if (requests.empty())
         return;
-    if (HttpAppFrameworkImpl::instance().keepaliveRequestsNumber() > 0 &&
+    if (app_->keepaliveRequestsNumber() > 0 &&
         requestParser->numberOfRequestsParsed() >=
-            HttpAppFrameworkImpl::instance().keepaliveRequestsNumber())
+            app_->keepaliveRequestsNumber())
     {
         requestParser->stop();
         conn->shutdown();
         return;
     }
-    else if (HttpAppFrameworkImpl::instance().pipeliningRequestsNumber() > 0 &&
+    else if (app_->pipeliningRequestsNumber() > 0 &&
              requestParser->numberOfRequestsInPipelining() + requests.size() >=
-                 HttpAppFrameworkImpl::instance().pipeliningRequestsNumber())
+                 app_->pipeliningRequestsNumber())
     {
         requestParser->stop();
         conn->shutdown();

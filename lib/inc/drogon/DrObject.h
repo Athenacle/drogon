@@ -15,6 +15,7 @@
 #pragma once
 
 #include <drogon/DrClassMap.h>
+#include <trantor/utils/Logger.h>
 
 #include <string>
 #include <type_traits>
@@ -110,6 +111,8 @@ class DrObject : public virtual DrObjectBase
                                 void>::type
         registerClass()
         {
+            LOG_WARN << "registerClass without default constructible - "
+                     << className();
         }
     };
 

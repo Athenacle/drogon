@@ -29,6 +29,8 @@ namespace drogon
 {
 class ListenerManager : public trantor::NonCopyable
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
     void addListener(const std::string &ip,
                      uint16_t port,
@@ -50,6 +52,9 @@ class ListenerManager : public trantor::NonCopyable
     void startListening();
     std::vector<trantor::InetAddress> getListeners() const;
     ~ListenerManager();
+    ListenerManager(HttpAppFrameworkImpl *app) : app_(app)
+    {
+    }
 
     trantor::EventLoop *getIOLoop(size_t id) const;
     void stopListening();

@@ -20,7 +20,7 @@ using namespace drogon;
 
 HttpFileUploadRequest::HttpFileUploadRequest(
     const std::vector<UploadFile> &files)
-    : HttpRequestImpl(nullptr),
+    : HttpRequestImpl(app_, nullptr),
       boundary_(utils::genRandomString(32)),
       files_(files)
 {

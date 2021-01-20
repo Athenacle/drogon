@@ -16,6 +16,7 @@
 #include <drogon/IntranetIpFilter.h>
 using namespace drogon;
 void IntranetIpFilter::doFilter(const HttpRequestPtr &req,
+                                const HttpOperation &op,
                                 FilterCallback &&fcb,
                                 FilterChainCallback &&fccb)
 {
@@ -24,6 +25,6 @@ void IntranetIpFilter::doFilter(const HttpRequestPtr &req,
         fccb();
         return;
     }
-    auto res = drogon::HttpResponse::newNotFoundResponse();
+    auto res = op.newNotFoundResponse();
     fcb(res);
 }

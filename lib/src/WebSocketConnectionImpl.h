@@ -19,6 +19,7 @@
 #include <trantor/utils/NonCopyable.h>
 #include <trantor/net/TcpConnection.h>
 
+#include "HttpAppFrameworkImpl.h"
 namespace drogon
 {
 class WebSocketConnectionImpl;
@@ -26,7 +27,13 @@ using WebSocketConnectionImplPtr = std::shared_ptr<WebSocketConnectionImpl>;
 
 class WebSocketMessageParser
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
+    WebSocketMessageParser(HttpAppFrameworkImpl *app) : app_(app)
+    {
+    }
+
     bool parse(trantor::MsgBuffer *buffer);
     bool gotAll(std::string &message, WebSocketMessageType &type)
     {
@@ -51,6 +58,7 @@ class WebSocketConnectionImpl
 {
   public:
     explicit WebSocketConnectionImpl(const trantor::TcpConnectionPtr &conn,
+                                     HttpAppFrameworkImpl *app,
                                      bool isServer = true);
 
     virtual void send(

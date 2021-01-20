@@ -33,8 +33,12 @@ namespace drogon
 {
 class HttpSimpleControllersRouter : public trantor::NonCopyable
 {
+    HttpAppFrameworkImpl *app_;
+    const HttpOperation &op_;
+
   public:
     HttpSimpleControllersRouter(
+        HttpAppFrameworkImpl *app,
         HttpControllersRouter &httpCtrlRouter,
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              AdviceCallback &&,
@@ -51,7 +55,9 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              const HttpResponsePtr &)>>
             &postHandlingAdvices)
-        : httpCtrlsRouter_(httpCtrlRouter),
+        : app_(app),
+          op_(app->getOperations()),
+          httpCtrlsRouter_(httpCtrlRouter),
           postRoutingAdvices_(postRoutingAdvices),
           preHandlingAdvices_(preHandlingAdvices),
           postRoutingObservers_(postRoutingObservers),
@@ -96,6 +102,10 @@ class HttpSimpleControllersRouter : public trantor::NonCopyable
         std::vector<std::string> filterNames_;
         std::vector<std::shared_ptr<HttpFilterBase>> filters_;
         IOThreadStorage<HttpResponsePtr> responseCache_;
+        CtrlBinder(HttpAppFrameworkImpl *app)
+            : responseCache_(reinterpret_cast<HttpAppFramework *>(app))
+        {
+        }
         bool isCORS_{false};
     };
 

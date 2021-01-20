@@ -448,43 +448,46 @@ void HttpRequestImpl::addHeader(const char *start,
     }
 }
 
-HttpRequestPtr HttpRequest::newHttpRequest()
+HttpRequestPtr HttpRequest::newHttpRequest(HttpAppFrameworkImpl *app)
 {
-    auto req = std::make_shared<HttpRequestImpl>(nullptr);
+    auto req = std::make_shared<HttpRequestImpl>(app, nullptr);
     req->setMethod(drogon::Get);
     req->setVersion(drogon::Version::kHttp11);
+    req->app_ = app;
     return req;
 }
 
-HttpRequestPtr HttpRequest::newHttpFormPostRequest()
+HttpRequestPtr HttpRequest::newHttpFormPostRequest(HttpAppFrameworkImpl *app)
 {
-    auto req = std::make_shared<HttpRequestImpl>(nullptr);
+    auto req = std::make_shared<HttpRequestImpl>(app, nullptr);
     req->setMethod(drogon::Post);
     req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_X_FORM;
     req->flagForParsingContentType_ = true;
+    req->app_ = app;
     return req;
 }
 
-HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
+HttpRequestPtr HttpRequest::newHttpJsonRequest(HttpAppFrameworkImpl *app,
+                                               const Json::Value &data)
 {
     static std::once_flag once;
     static Json::StreamWriterBuilder builder;
-    std::call_once(once, []() {
+    std::call_once(once, [app]() {
         builder["commentStyle"] = "None";
         builder["indentation"] = "";
-        if (!app().isUnicodeEscapingUsedInJson())
+        if (app->isUnicodeEscapingUsedInJson())
         {
             builder["emitUTF8"] = true;
         }
-        auto &precision = app().getFloatPrecisionInJson();
+        auto &precision = app->getFloatPrecisionInJson();
         if (precision.first != 0)
         {
             builder["precision"] = precision.first;
             builder["precisionType"] = precision.second;
         }
     });
-    auto req = std::make_shared<HttpRequestImpl>(nullptr);
+    auto req = std::make_shared<HttpRequestImpl>(app, nullptr);
     req->setMethod(drogon::Get);
     req->setVersion(drogon::Version::kHttp11);
     req->contentType_ = CT_APPLICATION_JSON;
@@ -494,9 +497,12 @@ HttpRequestPtr HttpRequest::newHttpJsonRequest(const Json::Value &data)
 }
 
 HttpRequestPtr HttpRequest::newFileUploadRequest(
+    HttpAppFrameworkImpl *app,
     const std::vector<UploadFile> &files)
 {
-    return std::make_shared<HttpFileUploadRequest>(files);
+    auto ret = std::make_shared<HttpFileUploadRequest>(files);
+    ret->app_ = app;
+    return ret;
 }
 
 void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
@@ -527,6 +533,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(loop_, that.loop_);
     swap(flagForParsingContentType_, that.flagForParsingContentType_);
     swap(jsonParsingErrorPtr_, that.jsonParsingErrorPtr_);
+    swap(app_, that.app_);
 }
 
 const char *HttpRequestImpl::methodString() const
@@ -647,7 +654,7 @@ HttpRequestImpl::~HttpRequestImpl()
 
 void HttpRequestImpl::reserveBodySize(size_t length)
 {
-    if (length <= HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+    if (length <= app_->getClientMaxMemoryBodySize())
     {
         content_.reserve(length);
     }
@@ -666,8 +673,7 @@ void HttpRequestImpl::appendToBody(const char *data, size_t length)
     }
     else
     {
-        if (content_.length() + length <=
-            HttpAppFrameworkImpl::instance().getClientMaxMemoryBodySize())
+        if (content_.length() + length <= app_->getClientMaxMemoryBodySize())
         {
             content_.append(data, length);
         }
@@ -683,7 +689,7 @@ void HttpRequestImpl::appendToBody(const char *data, size_t length)
 
 void HttpRequestImpl::createTmpFile()
 {
-    auto tmpfile = HttpAppFrameworkImpl::instance().getUploadPath();
+    auto tmpfile = getApp()->getUploadPath();
     auto fileName = utils::getUuid();
     tmpfile.append("/tmp/")
         .append(1, fileName[0])

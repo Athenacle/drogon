@@ -34,6 +34,7 @@ std::string indentStr(@@.get<std::string>("className").length(), ' ');
 if(hasPrimaryKey)
 {%>
 void [[className]]Base::getOne(const HttpRequestPtr &req,
+     {%indentStr%}             const HttpOperation &op,
      {%indentStr%}             std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}             {%modelName%}::PrimaryKeyType &&id)
 {
@@ -46,13 +47,13 @@ void [[className]]Base::getOne(const HttpRequestPtr &req,
     mapper.findByPrimaryKey(
         id,
         [req, callbackPtr, this]({%modelName%} r) {
-            (*callbackPtr)(HttpResponse::newHttpJsonResponse(makeJson(req, r)));
+            (*callbackPtr)(op.newHttpJsonResponse(makeJson(req, r)));
         },
         [callbackPtr](const DrogonDbException &e) {
             const drogon::orm::UnexpectedRows *s=dynamic_cast<const drogon::orm::UnexpectedRows *>(&e.base());
             if(s)
             {
-                auto resp = HttpResponse::newHttpResponse();
+                auto resp = op.newHttpResponse();
                 resp->setStatusCode(k404NotFound);
                 (*callbackPtr)(resp);
                 return;
@@ -60,7 +61,7 @@ void [[className]]Base::getOne(const HttpRequestPtr &req,
             LOG_ERROR<<e.base().what();
             Json::Value ret;
             ret["error"] = "database error";
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
+            auto resp = op.newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
         });
@@ -68,6 +69,7 @@ void [[className]]Base::getOne(const HttpRequestPtr &req,
 
 
 void [[className]]Base::updateOne(const HttpRequestPtr &req,
+     {%indentStr%}                const HttpOperation &op,
      {%indentStr%}                std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}                {%modelName%}::PrimaryKeyType &&id)
 {
@@ -76,7 +78,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
     {
         Json::Value ret;
         ret["error"]="No json object is found in the request";
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;
@@ -87,7 +89,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
     {
         Json::Value ret;
         ret["error"] = err;
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;
@@ -100,7 +102,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
             {
                 Json::Value ret;
                 ret["error"] = err;
-                auto resp= HttpResponse::newHttpJsonResponse(ret);
+                auto resp= op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k400BadRequest);
                 callback(resp);
                 return;
@@ -113,7 +115,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
             {
                 Json::Value ret;
                 ret["error"] = err;
-                auto resp= HttpResponse::newHttpJsonResponse(ret);
+                auto resp= op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k400BadRequest);
                 callback(resp);
                 return;
@@ -126,7 +128,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
         LOG_ERROR << e.what();
         Json::Value ret;
         ret["error"]="Field type error";
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;        
@@ -135,7 +137,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
     {
         Json::Value ret;
         ret["error"]="Bad primary key";
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;
@@ -149,11 +151,11 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
 
     mapper.update(
         object,
-        [callbackPtr](const size_t count) 
+        [callbackPtr, &op](const size_t count) 
         {
             if(count == 1)
             {
-                auto resp = HttpResponse::newHttpResponse();
+                auto resp = op.newHttpResponse();
                 resp->setStatusCode(k202Accepted);
                 (*callbackPtr)(resp);
             }
@@ -161,7 +163,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
             {
                 Json::Value ret;
                 ret["error"]="No resources are updated";
-                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                auto resp = op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k404NotFound);
                 (*callbackPtr)(resp);
             }
@@ -170,16 +172,16 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
                 LOG_FATAL << "More than one resource is updated: " << count;
                 Json::Value ret;
                 ret["error"] = "database error";
-                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                auto resp = op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k500InternalServerError);
                 (*callbackPtr)(resp);
             }
         },
-        [callbackPtr](const DrogonDbException &e) {
+        [callbackPtr, &op](const DrogonDbException &e) {
             LOG_ERROR << e.base().what();
             Json::Value ret;
             ret["error"] = "database error";
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
+            auto resp = op.newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
         });
@@ -187,6 +189,7 @@ void [[className]]Base::updateOne(const HttpRequestPtr &req,
 
 
 void [[className]]Base::deleteOne(const HttpRequestPtr &req,
+     {%indentStr%}                const HttpOperation &op,
      {%indentStr%}                std::function<void(const HttpResponsePtr &)> &&callback,
      {%indentStr%}                {%modelName%}::PrimaryKeyType &&id)
 {
@@ -198,10 +201,10 @@ void [[className]]Base::deleteOne(const HttpRequestPtr &req,
     drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
     mapper.deleteByPrimaryKey(
         id,
-        [callbackPtr](const size_t count) {
+        [callbackPtr, &op](const size_t count) {
             if(count == 1)
             {
-                auto resp = HttpResponse::newHttpResponse();
+                auto resp = op.newHttpResponse();
                 resp->setStatusCode(k204NoContent);
                 (*callbackPtr)(resp);
             }
@@ -209,7 +212,7 @@ void [[className]]Base::deleteOne(const HttpRequestPtr &req,
             {
                 Json::Value ret;
                 ret["error"] = "No resources deleted";
-                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                auto resp = op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k404NotFound);
                 (*callbackPtr)(resp);
             }
@@ -218,7 +221,7 @@ void [[className]]Base::deleteOne(const HttpRequestPtr &req,
                 LOG_FATAL << "Delete more than one records: " << count;
                 Json::Value ret;
                 ret["error"] = "Database error";
-                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                auto resp = op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k500InternalServerError);
                 (*callbackPtr)(resp);
             }
@@ -227,7 +230,7 @@ void [[className]]Base::deleteOne(const HttpRequestPtr &req,
             LOG_ERROR << e.base().what();
             Json::Value ret;
             ret["error"] = "database error";
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
+            auto resp = op.newHttpJsonResponse(ret);
             resp->setStatusCode(k500InternalServerError);
             (*callbackPtr)(resp);
         });
@@ -235,6 +238,7 @@ void [[className]]Base::deleteOne(const HttpRequestPtr &req,
 <%c++}%>
 
 void [[className]]Base::get(const HttpRequestPtr &req,
+     {%indentStr%}          const HttpOperation &op,
      {%indentStr%}          std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto dbClientPtr = getDbClient();
@@ -273,7 +277,7 @@ void [[className]]Base::get(const HttpRequestPtr &req,
         }
         catch(...)
         {
-            auto resp = HttpResponse::newHttpResponse();
+            auto resp = op.newHttpResponse();
             resp->setStatusCode(k400BadRequest);
             callback(resp);
             return;
@@ -288,7 +292,7 @@ void [[className]]Base::get(const HttpRequestPtr &req,
         }
         catch(...)
         {
-            auto resp = HttpResponse::newHttpResponse();
+            auto resp = op.newHttpResponse();
             resp->setStatusCode(k400BadRequest);
             callback(resp);
             return;
@@ -310,13 +314,13 @@ void [[className]]Base::get(const HttpRequestPtr &req,
                     {
                         ret.append(makeJson(req, obj));
                     }
-                    (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
+                    (*callbackPtr)(op.newHttpJsonResponse(ret));
                 },
                 [callbackPtr](const DrogonDbException &e) { 
                     LOG_ERROR << e.base().what();
                     Json::Value ret;
                     ret["error"] = "database error";
-                    auto resp = HttpResponse::newHttpJsonResponse(ret);
+                    auto resp = op.newHttpJsonResponse(ret);
                     resp->setStatusCode(k500InternalServerError);
                     (*callbackPtr)(resp);    
                 });
@@ -326,7 +330,7 @@ void [[className]]Base::get(const HttpRequestPtr &req,
             LOG_ERROR << e.what();
             Json::Value ret;
             ret["error"] = e.what();
-            auto resp = HttpResponse::newHttpJsonResponse(ret);
+            auto resp = op.newHttpJsonResponse(ret);
             resp->setStatusCode(k400BadRequest);
             (*callbackPtr)(resp);
             return;    
@@ -334,20 +338,20 @@ void [[className]]Base::get(const HttpRequestPtr &req,
     }
     else
     {
-        mapper.findAll([req, callbackPtr, this](const std::vector<{%modelName%}> &v) {
+        mapper.findAll([&op, req, callbackPtr, this](const std::vector<{%modelName%}> &v) {
                 Json::Value ret;
                 ret.resize(0);
                 for (auto &obj : v)
                 {
                     ret.append(makeJson(req, obj));
                 }
-                (*callbackPtr)(HttpResponse::newHttpJsonResponse(ret));
+                (*callbackPtr)(op.newHttpJsonResponse(ret));
             },
-            [callbackPtr](const DrogonDbException &e) { 
+            [callbackPtr, &op](const DrogonDbException &e) { 
                 LOG_ERROR << e.base().what();
                 Json::Value ret;
                 ret["error"] = "database error";
-                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                auto resp = op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k500InternalServerError);
                 (*callbackPtr)(resp);    
             });
@@ -355,6 +359,7 @@ void [[className]]Base::get(const HttpRequestPtr &req,
 }
 
 void [[className]]Base::create(const HttpRequestPtr &req,
+     {%indentStr%}             const HttpOperation &op,
      {%indentStr%}             std::function<void(const HttpResponsePtr &)> &&callback)
 {
     auto jsonPtr=req->jsonObject();
@@ -362,7 +367,7 @@ void [[className]]Base::create(const HttpRequestPtr &req,
     {
         Json::Value ret;
         ret["error"]="No json object is found in the request";
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;
@@ -372,7 +377,7 @@ void [[className]]Base::create(const HttpRequestPtr &req,
     {
         Json::Value ret;
         ret["error"] = err;
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;
@@ -383,7 +388,7 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         {
             Json::Value ret;
             ret["error"] = err;
-            auto resp= HttpResponse::newHttpJsonResponse(ret);
+            auto resp= op.newHttpJsonResponse(ret);
             resp->setStatusCode(k400BadRequest);
             callback(resp);
             return;
@@ -395,7 +400,7 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         {
             Json::Value ret;
             ret["error"] = err;
-            auto resp= HttpResponse::newHttpJsonResponse(ret);
+            auto resp= op.newHttpJsonResponse(ret);
             resp->setStatusCode(k400BadRequest);
             callback(resp);
             return;
@@ -414,15 +419,15 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         drogon::orm::Mapper<{%modelName%}> mapper(dbClientPtr);
         mapper.insert(
             object,
-            [req, callbackPtr, this]({%modelName%} newObject){
-                (*callbackPtr)(HttpResponse::newHttpJsonResponse(
+            [req, callbackPtr, this, &op]({%modelName%} newObject){
+                (*callbackPtr)(op.newHttpJsonResponse(
                     makeJson(req, newObject)));
             },
-            [callbackPtr](const DrogonDbException &e){
+            [callbackPtr, &op](const DrogonDbException &e){
                 LOG_ERROR << e.base().what();
                 Json::Value ret;
                 ret["error"] = "database error";
-                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                auto resp = op.newHttpJsonResponse(ret);
                 resp->setStatusCode(k500InternalServerError);
                 (*callbackPtr)(resp);   
             });
@@ -432,7 +437,7 @@ void [[className]]Base::create(const HttpRequestPtr &req,
         LOG_ERROR << e.what();
         Json::Value ret;
         ret["error"]="Field type error";
-        auto resp= HttpResponse::newHttpJsonResponse(ret);
+        auto resp= op.newHttpJsonResponse(ret);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;        
@@ -441,6 +446,7 @@ void [[className]]Base::create(const HttpRequestPtr &req,
 
 /*
 void [[className]]Base::update(const HttpRequestPtr &req,
+     {%indentStr%}             const HttpOperation &op,
      {%indentStr%}             std::function<void(const HttpResponsePtr &)> &&callback)
 {
 

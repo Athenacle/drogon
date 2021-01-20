@@ -28,12 +28,18 @@
 #include <map>
 #include <unordered_map>
 
+#include "HttpAppFrameworkImpl.h"
+
 namespace drogon
 {
 class HttpControllersRouter : public trantor::NonCopyable
 {
+    HttpAppFrameworkImpl *app_;
+    const HttpOperation &op_;
+
   public:
     HttpControllersRouter(
+        HttpAppFrameworkImpl *app,
         StaticFileRouter &router,
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              AdviceCallback &&,
@@ -50,7 +56,9 @@ class HttpControllersRouter : public trantor::NonCopyable
         const std::vector<std::function<void(const HttpRequestPtr &,
                                              const HttpResponsePtr &)>>
             &postHandlingAdvices)
-        : fileRouter_(router),
+        : app_(app),
+          op_(app->getOperations()),
+          fileRouter_(router),
           postRoutingAdvices_(postRoutingAdvices),
           preHandlingAdvices_(preHandlingAdvices),
           postRoutingObservers_(postRoutingObservers),
@@ -86,6 +94,9 @@ class HttpControllersRouter : public trantor::NonCopyable
         std::vector<std::pair<std::string, size_t>> queryParametersPlaces_;
         IOThreadStorage<HttpResponsePtr> responseCache_;
         bool isCORS_{false};
+        CtrlBinder(HttpAppFrameworkImpl *app) : responseCache_(app)
+        {
+        }
     };
     using CtrlBinderPtr = std::shared_ptr<CtrlBinder>;
     struct HttpControllerRouterItem

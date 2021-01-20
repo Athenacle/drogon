@@ -87,6 +87,9 @@ enum class CloseCode
  */
 class WebSocketConnection
 {
+  protected:
+    HttpAppFrameworkImpl *app_;
+
   public:
     WebSocketConnection() = default;
     virtual ~WebSocketConnection(){};

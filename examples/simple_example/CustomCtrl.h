@@ -17,6 +17,7 @@ class CustomCtrl : public drogon::HttpController<CustomCtrl, false>
     }
 
     void hello(const HttpRequestPtr &req,
+               const HttpOperation &op,
                std::function<void(const HttpResponsePtr &)> &&callback,
                const std::string &userName) const;
 

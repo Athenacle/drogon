@@ -16,6 +16,7 @@
 
 #include <drogon/DrObject.h>
 #include <drogon/HttpAppFramework.h>
+#include <drogon/HttpAppFrameworkManager.h>
 #include <drogon/WebSocketConnection.h>
 #include <drogon/HttpTypes.h>
 #include <trantor/utils/Logger.h>
@@ -24,10 +25,10 @@
 #include <string>
 #include <vector>
 
-#define WS_PATH_LIST_BEGIN        \
-    static void initPathRouting() \
+#define WS_PATH_LIST_BEGIN                                     \
+    static void initPathRouting(drogon::HttpAppFramework *app) \
     {
-#define WS_PATH_ADD(path, ...) registerSelf__(path, {__VA_ARGS__});
+#define WS_PATH_ADD(path, ...) registerSelf__(app, path, {__VA_ARGS__});
 #define WS_PATH_LIST_END }
 
 namespace drogon
@@ -69,6 +70,8 @@ using WebSocketControllerBasePtr = std::shared_ptr<WebSocketControllerBase>;
 template <typename T, bool AutoCreation = true>
 class WebSocketController : public DrObject<T>, public WebSocketControllerBase
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
     static const bool isAutoCreation = AutoCreation;
     virtual ~WebSocketController()
@@ -80,13 +83,14 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
     {
     }
     static void registerSelf__(
+        HttpAppFramework *app,
         const std::string &path,
         const std::vector<internal::HttpConstraint> &filtersAndMethods)
     {
         LOG_TRACE << "register websocket controller("
                   << WebSocketController<T>::classTypeName()
                   << ") on path:" << path;
-        app().registerWebSocketController(
+        app->registerWebSocketController(
             path, WebSocketController<T>::classTypeName(), filtersAndMethods);
     }
 
@@ -98,7 +102,8 @@ class WebSocketController : public DrObject<T>, public WebSocketControllerBase
         {
             if (AutoCreation)
             {
-                T::initPathRouting();
+                HttpAppFrameworkManager::instance().pushAutoCreationFunction(
+                    [](HttpAppFramework *app) { T::initPathRouting(app); });
             }
         }
     };

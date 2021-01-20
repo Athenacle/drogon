@@ -24,11 +24,18 @@
 
 namespace drogon
 {
+class HttpAppFrameworkImpl;
 namespace orm
 {
 class DbClientManager : public trantor::NonCopyable
 {
+    HttpAppFrameworkImpl *app_;
+
   public:
+    explicit DbClientManager(HttpAppFrameworkImpl *app) : app_(app)
+    {
+    }
+
     void createDbClients(const std::vector<trantor::EventLoop *> &ioloops);
     DbClientPtr getDbClient(const std::string &name)
     {
@@ -40,7 +47,7 @@ class DbClientManager : public trantor::NonCopyable
     {
         auto iter = dbFastClientsMap_.find(name);
         assert(iter != dbFastClientsMap_.end());
-        return iter->second.getThreadData();
+        return iter->second->getThreadData();
     }
     void createDbClient(const std::string &dbType,
                         const std::string &host,
@@ -66,7 +73,8 @@ class DbClientManager : public trantor::NonCopyable
         size_t connectionNumber_;
     };
     std::vector<DbInfo> dbInfos_;
-    std::map<std::string, IOThreadStorage<orm::DbClientPtr>> dbFastClientsMap_;
+    std::map<std::string, std::unique_ptr<IOThreadStorage<orm::DbClientPtr>>>
+        dbFastClientsMap_;
 };
 }  // namespace orm
 }  // namespace drogon

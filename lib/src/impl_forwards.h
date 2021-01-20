@@ -35,6 +35,7 @@ class ListenerManager;
 class SharedLibManager;
 class SessionManager;
 class HttpServer;
+class HttpAppFrameworkImpl;
 
 namespace orm
 {

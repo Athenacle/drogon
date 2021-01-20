@@ -6,11 +6,13 @@ using namespace drogon;
 
 int main()
 {
+    auto app = drogon::create();
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
+    auto &op = app->getOperations();
     {
         int count = 0;
-        auto client = HttpClient::newHttpClient("http://www.baidu.com");
-        auto req = HttpRequest::newHttpRequest();
+        auto client = op.newHttpClient("http://www.baidu.com");
+        auto req = op.newHttpRequest();
         req->setMethod(drogon::Get);
         req->setPath("/s");
         req->setParameter("wd", "wx");
@@ -38,5 +40,5 @@ int main()
         }
     }
 
-    app().run();
+    app->run();
 }

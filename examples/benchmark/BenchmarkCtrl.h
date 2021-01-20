@@ -6,8 +6,13 @@ class BenchmarkCtrl : public drogon::HttpSimpleController<BenchmarkCtrl>
   public:
     virtual void asyncHandleHttpRequest(
         const HttpRequestPtr &req,
+        const HttpOperation &op,
         std::function<void(const HttpResponsePtr &)> &&callback) override;
-    PATH_LIST_BEGIN
-    PATH_ADD("/benchmark", Get);
-    PATH_LIST_END
+    static void initPathRouting(drogon::HttpAppFramework *app)
+    {
+        registerSelf__(app, "/benchmark", {Get});
+    }
+    // PATH_LIST_BEGIN
+    // PATH_ADD("/benchmark", Get);
+    // PATH_LIST_END
 };
