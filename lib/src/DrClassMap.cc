@@ -42,7 +42,6 @@ static std::mutex &getMapMutex()
 void DrClassMap::registerClass(const std::string &className,
                                const DrAllocFunc &func)
 {
-    LOG_TRACE << "Register class:" << className;
     getMap().insert(std::make_pair(className, func));
 }
 

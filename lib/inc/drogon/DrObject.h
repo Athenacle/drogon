@@ -111,8 +111,6 @@ class DrObject : public virtual DrObjectBase
                                 void>::type
         registerClass()
         {
-            LOG_WARN << "registerClass without default constructible - "
-                     << className();
         }
     };
 
