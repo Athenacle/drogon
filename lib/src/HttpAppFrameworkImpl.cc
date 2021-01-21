@@ -438,8 +438,6 @@ void HttpAppFrameworkImpl::run()
         getLoop()->moveToCurrentThread();
     }
     LOG_TRACE << "Start to run...";
-    trantor::AsyncFileLogger asyncFileLogger;
-    // Create dirs for cache files
     for (int i = 0; i < 256; ++i)
     {
         char dirName[4];
@@ -502,14 +500,6 @@ void HttpAppFrameworkImpl::run()
             {
                 baseName = "drogon";
             }
-            asyncFileLogger.setFileName(baseName, ".log", logPath_);
-            asyncFileLogger.startLogging();
-            trantor::Logger::setOutputFunction(
-                [&](const char *msg, const uint64_t len) {
-                    asyncFileLogger.output(msg, len);
-                },
-                [&]() { asyncFileLogger.flush(); });
-            asyncFileLogger.setFileSizeLimit(logfileSize_);
         }
     }
     if (relaunchOnError_)
