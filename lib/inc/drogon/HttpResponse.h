@@ -1,6 +1,6 @@
 /**
  *  @file HttpResponse.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/Cookie.h>
@@ -68,7 +69,7 @@ inline HttpResponsePtr toResponse<Json::Value &>(HttpAppFrameworkImpl *app,
     return toResponse(app, (const Json::Value &)pJson);
 }
 
-class HttpResponse
+class DROGON_EXPORT HttpResponse
 {
     friend class HttpOperation;
 
@@ -372,6 +373,23 @@ class HttpResponse
     static HttpResponsePtr newFileResponse(
         HttpAppFrameworkImpl *,
         const std::string &fullPath,
+        const std::string &attachmentFileName = "",
+        ContentType type = CT_NONE);
+
+    /// Create a response that returns a file to the client from buffer in
+    /// memory/stack
+    /**
+     * @param pBuffer is a uint 8 bit flat buffer for object/files in memory
+     * @param bufferLength is the length of the expected buffer
+     * @param attachmentFileName if the parameter is not empty, the browser
+     * does not open the file, but saves it as an attachment.
+     * @param type if the parameter is CT_NONE, the content type is set by
+     * drogon based on the file extension.
+     */
+    static HttpResponsePtr newFileResponse(
+        HttpAppFrameworkImpl *,
+        const unsigned char *pBuffer,
+        size_t bufferLength,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
 

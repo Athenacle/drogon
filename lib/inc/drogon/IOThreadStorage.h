@@ -64,7 +64,7 @@ class IOThreadStorage : public trantor::NonCopyable
     using InitCallback = std::function<void(ValueType &, size_t)>;
 
     template <typename... Args>
-    IOThreadStorage(HttpAppFramework *app, Args &&...args) : app_(app)
+    IOThreadStorage(HttpAppFramework *app, Args &&... args) : app_(app)
     {
         static_assert(std::is_constructible<C, Args &&...>::value,
                       "Unable to construct storage with given signature");
@@ -73,7 +73,7 @@ class IOThreadStorage : public trantor::NonCopyable
         assert(numThreads > 0 && numThreads != size_t(-1));
 #else
         assert(numThreads > 0 &&
-               numThreads != std::numeric_limits<size_t>::max());
+               numThreads != (std::numeric_limits<size_t>::max)());
 #endif
         // set the size to numThreads+1 to enable access to this in the main
         // thread.

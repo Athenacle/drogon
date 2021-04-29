@@ -4,6 +4,132 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.1] - 2021-04-10
+
+### Fixed
+
+- Fix a bug of reflection failure.
+
+## [1.5.0] - 2021-04-10
+
+### API changes list
+
+- Add option to disable signal handling.
+
+- Added newFileResponse Support for buffers in memory.
+
+- Add a method to HttpRequest to set the user_agent header.
+
+- Catch exceptions thrown by handlers.
+
+### Changed
+
+- Add convert method to models.
+
+- Add Arch Dockerfile.
+
+- Add Redis support.
+
+- Print error and exit when IP parsing failed in server startup.
+
+- Use a canonical way of calling max() function on Windows.
+
+- Remove an assertion statement in the HttpClientImpl class.
+
+- Send ping messages by default for WebSockets.
+
+- Use canonical cmake logic for cross-compilation.
+
+- set make job count to the number of threads in GitHub Actions workflow.
+
+- Use lambda instead of std::bind in HttpServer.
+
+- Add exports macro to allow Shared Library with hidden symbols by default.
+
+- Remove repeated class names on relationships from the model generator.
+
+### Fixed
+
+- Fix compile warnings in SQL client.
+
+- Fix compilation errors for the TimeFilter example.
+
+- Fix build.sh missing nproc error in build for macOS.
+
+- Fix a bug when creating sqlite3 models.
+
+- Fix two building corner cases, CMake quality of life improvements.
+
+- Add CoroMapper to models' friends.
+
+## [1.4.1] - 2021-03-07
+
+### Fixed
+
+- Fix a bug of DbClientImpl class that can lead to a crash when database connections are breaking.
+
+## [1.4.0] - 2021-03-05
+
+### API changes list
+
+- Add coroutine support.
+
+- Add default value interface to SqlBinder for MySQL and PostgreSQL.
+
+- Support SNI in the HttpClient class.
+
+- Validate certificate in HttpClient.
+
+- HttpRequest: add a feature to avoid URL encoding of the path.
+
+### Changed
+
+- Handle cross-compiling properly.
+
+- Lowercase all HTTP headers, add webp and avif types.
+
+- Modify FindMySQL.cmake
+
+### Fixed
+
+- Fix an error in the HttpClient class when a response has no content-length.
+
+- Return 404 or 405 responses correctly.
+
+- Fix compilation errors on vs2019.
+
+- Fix stack use after scope error in client_example.
+
+- Fix the error when the SSL handshake fails.
+
+## [1.3.0] - 2021-01-16
+
+### API changes list
+
+- Add an option for setting float precision in Json string.
+
+### Fixed
+
+- Fix brotli link order.
+
+- Fix cmake with drogonctl cross-compilation.
+
+- sqlite3: Insert into stmtsMap_ as string_view.
+
+- Fix some bugs when creating models via drogon_ctl.
+
+- Fix an error in sqlite3 ORM generator.
+
+- Fix an error with missing composite key to sqlite3 ORM generator.
+
+### Changed
+
+- Remove the use of std::filesystem to adapt to old compilers.
+
+- Add github actions.
+
+- Serve wasm files with the correct MIME type.
+
 ## [1.2.0] - 2020-12-12
 
 ### Fixed
@@ -40,7 +166,7 @@ All notable changes to this project will be documented in this file.
 
 - Fix the HttpServer::isWebSocket method.
 
-- Find mariadb client library correctly on Ubuntu 20.04.
+- Find MariaDB client library correctly on Ubuntu 20.04.
 
 - Fix a bug when creating sqlite3 database models.
 
@@ -98,7 +224,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Modify the Result class in orm.
+- Modify the Result class in ORM.
 
 ### Fixed
 
@@ -106,7 +232,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta20] - 2020-08-15
 
-### API change list
+### API changes list
 
 - Provide users with a method to change the session ID of a session.
 
@@ -128,9 +254,9 @@ All notable changes to this project will be documented in this file.
 
 - Fix a bug when saving uploaded files on Windows.
 
-- Fix a mysql issue when connections are lost.
+- Fix a MySQL issue when connections are lost.
 
-- Resolve an issue when sending big files (>=2gB) on Windows.
+- Resolve an issue when sending big files (>=2GB) on Windows.
 
 - Fix boost::string_view compilation error of MysqlConnection class.
 
@@ -140,7 +266,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta19] - 2020-07-16
 
-### API change list
+### API changes list
 
 - Add a method to disable unicode escaping in json string.
 
@@ -172,7 +298,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta18] - 2020-06-14
 
-### API change list
+### API changes list
 
 - Add a new joinpoint of AOP for modification on each HTTP response.
 
@@ -214,7 +340,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta17] - 2020-05-22
 
-### API change list
+### API changes list
 
 - Add methods to get DbClient connection status
 
@@ -234,11 +360,11 @@ All notable changes to this project will be documented in this file.
 
 - Fix a bug in drogon_ctl (when size of a line is larger than buffer size)
 
-- Fix a connection bug of mariadb clients
+- Fix a connection bug of MariaDB clients
 
 ## [1.0.0-beta16] - 2020-04-27
 
-### API change list
+### API changes list
 
 - Standardize Row and Result api in ORM
 
@@ -254,7 +380,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta15] - 2020-03-28
 
-### API change list
+### API changes list
 
 - Modify the Attributes interface of the HttpRequest class
 
@@ -292,7 +418,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta14] - 2020-02-17
 
-### API change list
+### API changes list
 
 - None
 
@@ -322,7 +448,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta13] - 2020-01-04
 
-### API change list
+### API changes list
 
 - None
 
@@ -376,7 +502,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta10] - 2019-11-04
 
-### API change list
+### API changes list
 
 - None
 
@@ -391,7 +517,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta9] - 2019-10-28
 
-### API change list
+### API changes list
 
 - Add interfaces for accessing content of attachments.
 
@@ -415,12 +541,12 @@ All notable changes to this project will be documented in this file.
 
 - Fix some race conditions.
 
-- Fix a busy loop bug when connections to mysql server are timeout.
+- Fix a busy loop bug when connections to MySQL server are timeout.
 
 
 ## [1.0.0-beta8] - 2019-10-03
 
-### API change list
+### API changes list
 
 - Add length() method to the Field class.
 
@@ -441,7 +567,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Fix a bug of creating models for mysql.
+- Fix a bug of creating models for MySQL.
 
 - Fix a bug when HTTP method is PUT.
 
@@ -461,7 +587,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta7] - 2019-08-31
 
-### API change list
+### API changes list
 
 - Remove the default value parameter of some methods (#220)
 
@@ -492,7 +618,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta6] - 2019-08-08
 
-### API change list
+### API changes list
 
 - None
 
@@ -506,7 +632,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta5] - 2019-08-01
 
-### API change list
+### API changes list
 
 - None
 
@@ -526,7 +652,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta4] - 2019-07-30
 
-### API change list
+### API changes list
 
 - HttpRequest::query() returns a const reference of std::string instead of a string_view
 - WebSocketConnection::setContext(), WebSocketConnection::getContext(), etc.
@@ -547,7 +673,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta3] - 2019-07-28
 
-### API change list
+### API changes list
 
 - None
 
@@ -568,7 +694,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta2] - 2019-07-10
 
-### API change list
+### API changes list
 
 - Add setBody methods to the HttpRequest class.
 - Add the setContentTypeCodeAndCustomString method to the HttpResponse class.
@@ -592,7 +718,17 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0-beta1] - 2019-06-11
 
-[Unreleased]: https://github.com/an-tao/drogon/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/an-tao/drogon/compare/v1.5.1...HEAD
+
+[1.5.1]: https://github.com/an-tao/drogon/compare/v1.5.0...v1.5.1
+
+[1.5.0]: https://github.com/an-tao/drogon/compare/v1.4.1...v1.5.0
+
+[1.4.1]: https://github.com/an-tao/drogon/compare/v1.4.0...v1.4.1
+
+[1.4.0]: https://github.com/an-tao/drogon/compare/v1.3.0...v1.4.0
+
+[1.3.0]: https://github.com/an-tao/drogon/compare/v1.2.0...v1.3.0
 
 [1.2.0]: https://github.com/an-tao/drogon/compare/v1.1.0...v1.2.0
 

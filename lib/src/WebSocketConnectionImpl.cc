@@ -1,7 +1,7 @@
 /**
  *
- *  WebSocketConnectionImpl.cc
- *  An Tao
+ *  @file WebSocketConnectionImpl.cc
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -29,7 +29,10 @@ WebSocketConnectionImpl::WebSocketConnectionImpl(
 {
     app_ = app;
 }
-
+WebSocketConnectionImpl::~WebSocketConnectionImpl()
+{
+    shutdown();
+}
 void WebSocketConnectionImpl::send(const char *msg,
                                    uint64_t len,
                                    const WebSocketMessageType type)
@@ -155,6 +158,8 @@ void WebSocketConnectionImpl::WebSocketConnectionImpl::shutdown(
     const std::string &reason)
 {
     tcpConnectionPtr_->getLoop()->invalidateTimer(pingTimerId_);
+    if (!tcpConnectionPtr_->connected())
+        return;
     std::string message;
     message.resize(reason.length() + 2);
     auto c = htons(static_cast<unsigned short>(code));
@@ -173,15 +178,32 @@ void WebSocketConnectionImpl::setPingMessage(
     const std::string &message,
     const std::chrono::duration<long double> &interval)
 {
-    std::weak_ptr<WebSocketConnectionImpl> weakPtr = shared_from_this();
-    pingTimerId_ = tcpConnectionPtr_->getLoop()->runEvery(
-        interval.count(), [weakPtr, message]() {
-            auto thisPtr = weakPtr.lock();
-            if (thisPtr)
-            {
-                thisPtr->send(message, WebSocketMessageType::Ping);
-            }
-        });
+    auto loop = tcpConnectionPtr_->getLoop();
+    if (loop->isInLoopThread())
+    {
+        setPingMessageInLoop(std::string{message}, interval);
+    }
+    else
+    {
+        loop->queueInLoop(
+            [msg = message, interval, thisPtr = shared_from_this()]() mutable {
+                thisPtr->setPingMessageInLoop(std::move(msg), interval);
+            });
+    }
+}
+
+void WebSocketConnectionImpl::disablePing()
+{
+    auto loop = tcpConnectionPtr_->getLoop();
+    if (loop->isInLoopThread())
+    {
+        disablePingInLoop();
+    }
+    else
+    {
+        loop->queueInLoop(
+            [thisPtr = shared_from_this()]() { thisPtr->disablePingInLoop(); });
+    }
 }
 
 bool WebSocketMessageParser::parse(trantor::MsgBuffer *buffer)
@@ -348,6 +370,8 @@ void WebSocketConnectionImpl::onNewMessage(
                 {
                     return;
                 }
+                // LOG_TRACE << "new message received: " << message
+                //           << "\n(type=" << (int)type << ")";
                 messageCallback_(std::move(message), shared_from_this(), type);
             }
             else
@@ -363,4 +387,28 @@ void WebSocketConnectionImpl::onNewMessage(
         }
     }
     return;
+}
+
+void WebSocketConnectionImpl::disablePingInLoop()
+{
+    if (pingTimerId_ != trantor::InvalidTimerId)
+    {
+        tcpConnectionPtr_->getLoop()->invalidateTimer(pingTimerId_);
+    }
+}
+
+void WebSocketConnectionImpl::setPingMessageInLoop(
+    std::string &&message,
+    const std::chrono::duration<long double> &interval)
+{
+    std::weak_ptr<WebSocketConnectionImpl> weakPtr = shared_from_this();
+    disablePingInLoop();
+    pingTimerId_ = tcpConnectionPtr_->getLoop()->runEvery(
+        interval.count(), [weakPtr, message = std::move(message)]() {
+            auto thisPtr = weakPtr.lock();
+            if (thisPtr)
+            {
+                thisPtr->send(message, WebSocketMessageType::Ping);
+            }
+        });
 }

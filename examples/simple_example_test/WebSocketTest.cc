@@ -71,4 +71,6 @@ int main(int argc, char *argv[])
     });
     app->setLogLevel(trantor::Logger::kTrace);
     app->run();
+    LOG_DEBUG << "bye!";
+    return 0;
 }

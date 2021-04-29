@@ -194,7 +194,14 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
 
     if (!path_.empty())
     {
-        output->append(utils::urlEncode(path_));
+        if (pathEncode_)
+        {
+            output->append(utils::urlEncode(path_));
+        }
+        else
+        {
+            output->append(path_);
+        }
     }
     else
     {
@@ -272,7 +279,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append("--");
                 content.append(mReq->boundary());
                 content.append("\r\n");
-                content.append("Content-Disposition: form-data; name=\"");
+                content.append("content-disposition: form-data; name=\"");
                 content.append(param.first);
                 content.append("\"\r\n\r\n");
                 content.append(param.second);
@@ -283,7 +290,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
                 content.append("--");
                 content.append(mReq->boundary());
                 content.append("\r\n");
-                content.append("Content-Disposition: form-data; name=\"");
+                content.append("content-disposition: form-data; name=\"");
                 content.append(file.itemName());
                 content.append("\"; filename=\"");
                 content.append(file.fileName());
@@ -339,7 +346,7 @@ void HttpRequestImpl::appendToBuffer(trantor::MsgBuffer *output) const
     }
     if (cookies_.size() > 0)
     {
-        output->append("Cookie: ");
+        output->append("cookie: ");
         for (auto it = cookies_.begin(); it != cookies_.end(); ++it)
         {
             output->append(it->first);
@@ -514,6 +521,7 @@ void HttpRequestImpl::swap(HttpRequestImpl &that) noexcept
     swap(flagForParsingParameters_, that.flagForParsingParameters_);
     swap(matchedPathPattern_, that.matchedPathPattern_);
     swap(path_, that.path_);
+    swap(pathEncode_, that.pathEncode_);
     swap(query_, that.query_);
     swap(headers_, that.headers_);
     swap(cookies_, that.cookies_);

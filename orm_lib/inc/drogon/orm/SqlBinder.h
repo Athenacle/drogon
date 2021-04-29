@@ -1,7 +1,7 @@
 /**
  *
- *  SqlBinder.h
- *  An Tao
+ *  @file SqlBinder.h
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -13,6 +13,8 @@
  */
 
 #pragma once
+#include <drogon/exports.h>
+#include <drogon/orm/DbTypes.h>
 #include <drogon/orm/Exception.h>
 #include <drogon/orm/Field.h>
 #include <drogon/orm/FunctionTraits.h>
@@ -22,6 +24,7 @@
 #include <drogon/utils/string_view.h>
 #include <drogon/utils/optional.h>
 #include <trantor/utils/Logger.h>
+#include <trantor/utils/NonCopyable.h>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -261,7 +264,7 @@ class CallbackHolder : public CallbackHolderBase
         return field.as<ValueType>();
     }
 };
-class SqlBinder
+class DROGON_EXPORT SqlBinder : public trantor::NonCopyable
 {
     using self = SqlBinder;
 
@@ -294,6 +297,29 @@ class SqlBinder
           type_(type)
     {
     }
+    SqlBinder(SqlBinder &&that)
+        : sqlPtr_(std::move(that.sqlPtr_)),
+          sqlViewPtr_(that.sqlViewPtr_),
+          sqlViewLength_(that.sqlViewLength_),
+          client_(that.client_),
+          parametersNumber_(that.parametersNumber_),
+          parameters_(std::move(that.parameters_)),
+          lengths_(std::move(that.lengths_)),
+          formats_(std::move(that.formats_)),
+          objs_(std::move(that.objs_)),
+          mode_(that.mode_),
+          callbackHolder_(std::move(that.callbackHolder_)),
+          exceptionCallback_(std::move(that.exceptionCallback_)),
+          exceptionPtrCallback_(std::move(that.exceptionPtrCallback_)),
+          execed_(that.execed_),
+          destructed_(that.destructed_),
+          isExceptionPtr_(that.isExceptionPtr_),
+          type_(that.type_)
+    {
+        // set the execed_ to true to avoid the same sql being executed twice.
+        that.execed_ = true;
+    }
+    SqlBinder &operator=(SqlBinder &&that) = delete;
     ~SqlBinder();
     template <typename CallbackType,
               typename traits = FunctionTraits<CallbackType>>
@@ -343,6 +369,21 @@ class SqlBinder
         std::shared_ptr<void> obj = std::make_shared<ParaType>(parameter);
         if (type_ == ClientType::PostgreSQL)
         {
+#if __cplusplus >= 201703L || (defined _MSC_VER && _MSC_VER > 1900)
+            const size_t size = sizeof(T);
+            if constexpr (size == 2)
+            {
+                *std::static_pointer_cast<uint16_t>(obj) = htons(parameter);
+            }
+            else if constexpr (size == 4)
+            {
+                *std::static_pointer_cast<uint32_t>(obj) = htonl(parameter);
+            }
+            else if constexpr (size == 8)
+            {
+                *std::static_pointer_cast<uint64_t>(obj) = htonll(parameter);
+            }
+#else
             switch (sizeof(T))
             {
                 case 2:
@@ -360,6 +401,7 @@ class SqlBinder
 
                     break;
             }
+#endif
             objs_.push_back(obj);
             parameters_.push_back((char *)obj.get());
             lengths_.push_back(sizeof(T));
@@ -432,6 +474,7 @@ class SqlBinder
     }
     self &operator<<(double f);
     self &operator<<(std::nullptr_t nullp);
+    self &operator<<(DefaultValue dv);
     self &operator<<(const Mode &mode)
     {
         mode_ = mode;
@@ -466,7 +509,7 @@ class SqlBinder
     int getMysqlTypeBySize(size_t size);
     std::shared_ptr<std::string> sqlPtr_;
     const char *sqlViewPtr_;
-    const size_t sqlViewLength_;
+    size_t sqlViewLength_;
     DbClient &client_;
     size_t parametersNumber_{0};
     std::vector<const char *> parameters_;

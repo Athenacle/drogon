@@ -48,14 +48,14 @@ DbClientLockFree::DbClientLockFree(const std::string &connInfo,
                                    size_t connectionNumberPerLoop)
     : connectionInfo_(connInfo),
       loop_(loop),
-      connectionsNumber_(connectionNumberPerLoop)
+      numberOfConnections_(connectionNumberPerLoop)
 {
     type_ = type;
     LOG_TRACE << "type=" << (int)type;
     if (type == ClientType::PostgreSQL || type == ClientType::Mysql)
     {
         loop_->queueInLoop([this]() {
-            for (size_t i = 0; i < connectionsNumber_; ++i)
+            for (size_t i = 0; i < numberOfConnections_; ++i)
                 connectionHolders_.push_back(newConnection());
         });
     }
@@ -395,7 +395,7 @@ DbConnectionPtr DbClientLockFree::newConnection()
 
         thisPtr->transSet_.erase(closeConnPtr);
         // Reconnect after 1 second
-        thisPtr->loop_->runAfter(1, [weakPtr] {
+        thisPtr->loop_->runAfter(1, [weakPtr, closeConnPtr] {
             auto thisPtr = weakPtr.lock();
             if (!thisPtr)
                 return;

@@ -212,7 +212,12 @@ HttpOperation *HttpOperation::createInstance(HttpAppFrameworkImpl *app)
     op->notFound_ = bind(&HttpResponse::newNotFoundResponse, app);
 
     op->redirect_ = bind(&HttpResponse::newRedirectionResponse, app, _1, _2);
-    op->file_ = bind(&HttpResponse::newFileResponse, app, _1, _2, _3);
+    // op->file_ = bind(&HttpResponse::newFileResponse, app, _1, _2, _3);
+    op->file_ = [app](const std::string &a,
+                      const std::string &b,
+                      drogon::ContentType ct) {
+        return HttpResponse::newFileResponse(app, a, b, ct);
+    };
 
     op->httpView_ = bind(&HttpResponse::newHttpViewResponse, app, _1, _2);
 

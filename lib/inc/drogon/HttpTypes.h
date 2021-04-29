@@ -102,6 +102,8 @@ enum ContentType
     CT_APPLICATION_PDF,
     CT_IMAGE_SVG_XML,
     CT_IMAGE_PNG,
+    CT_IMAGE_WEBP,
+    CT_IMAGE_AVIF,
     CT_IMAGE_JPG,
     CT_IMAGE_GIF,
     CT_IMAGE_XICON,
@@ -129,7 +131,9 @@ enum class ReqResult
     BadResponse,
     NetworkFailure,
     BadServerAddress,
-    Timeout
+    Timeout,
+    HandshakeError,
+    InvalidCertificate,
 };
 
 enum class WebSocketMessageType

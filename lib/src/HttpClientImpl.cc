@@ -37,7 +37,9 @@ void HttpClientImpl::createTcpClient()
 #ifdef OpenSSL_FOUND
     if (useSSL_)
     {
-        tcpClientPtr_->enableSSL(useOldTLS_);
+        LOG_TRACE << "useOldTLS=" << useOldTLS_;
+        LOG_TRACE << "domain=" << domain_;
+        tcpClientPtr_->enableSSL(useOldTLS_, validateCert_, domain_);
     }
 #endif
     auto thisPtr = shared_from_this();
@@ -69,7 +71,7 @@ void HttpClientImpl::createTcpClient()
             {
                 LOG_TRACE << "connection disconnect";
                 auto responseParser = connPtr->getContext<HttpResponseParser>();
-                if (responseParser->parseResponseOnClose() &&
+                if (responseParser && responseParser->parseResponseOnClose() &&
                     responseParser->gotAll())
                 {
                     auto &firstReq = thisPtr->pipeliningCallbacks_.front();
@@ -79,8 +81,12 @@ void HttpClientImpl::createTcpClient()
                     }
                     auto resp = responseParser->responseImpl();
                     responseParser->reset();
-                    thisPtr->handleResponse(resp, std::move(firstReq));
-                    thisPtr->tcpClientPtr_.reset();
+                    thisPtr->handleResponse(resp, std::move(firstReq), connPtr);
+                    if (!thisPtr->requestsBuffer_.empty())
+                    {
+                        thisPtr->createTcpClient();
+                    }
+                    return;
                 }
                 thisPtr->onError(ReqResult::NetworkFailure);
             }
@@ -101,21 +107,41 @@ void HttpClientImpl::createTcpClient()
                 thisPtr->onRecvMessage(connPtr, msg);
             }
         });
+    tcpClientPtr_->setSSLErrorCallback([weakPtr](SSLError err) {
+        auto thisPtr = weakPtr.lock();
+        if (!thisPtr)
+            return;
+        if (err == trantor::SSLError::kSSLHandshakeError)
+            thisPtr->onError(ReqResult::HandshakeError);
+        else if (err == trantor::SSLError::kSSLInvalidCertificate)
+            thisPtr->onError(ReqResult::InvalidCertificate);
+        else
+        {
+            LOG_FATAL << "Invalid value for SSLError";
+            abort();
+        }
+    });
     tcpClientPtr_->connect();
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const trantor::InetAddress &addr,
                                bool useSSL,
-                               bool useOldTLS)
-    : loop_(loop), serverAddr_(addr), useSSL_(useSSL), useOldTLS_(useOldTLS)
+                               bool useOldTLS,
+                               bool validateCert)
+    : loop_(loop),
+      serverAddr_(addr),
+      useSSL_(useSSL),
+      validateCert_(validateCert),
+      useOldTLS_(useOldTLS)
 {
 }
 
 HttpClientImpl::HttpClientImpl(trantor::EventLoop *loop,
                                const std::string &hostString,
-                               bool useOldTLS)
-    : loop_(loop), useOldTLS_(useOldTLS)
+                               bool useOldTLS,
+                               bool validateCert)
+    : loop_(loop), validateCert_(validateCert), useOldTLS_(useOldTLS)
 {
     auto lowerHost = hostString;
     std::transform(lowerHost.begin(),
@@ -236,6 +262,7 @@ void HttpClientImpl::sendRequest(const drogon::HttpRequestPtr &req,
             thisPtr->sendRequestInLoop(req, std::move(callback), timeout);
         });
 }
+
 void HttpClientImpl::sendRequestInLoop(const HttpRequestPtr &req,
                                        HttpReqCallback &&callback,
                                        double timeout)
@@ -277,7 +304,8 @@ void HttpClientImpl::sendRequestInLoop(const drogon::HttpRequestPtr &req,
     if (!static_cast<drogon::HttpRequestImpl *>(req.get())->passThrough())
     {
         req->addHeader("connection", "Keep-Alive");
-        req->addHeader("user-agent", "DrogonClient");
+        if (!userAgent_.empty())
+            req->addHeader("user-agent", userAgent_);
     }
     // Set the host header.
     if (!domain_.empty())
@@ -485,18 +513,30 @@ void HttpClientImpl::handleResponse(
     // pipeliningCallbacks_.size(); LOG_TRACE << "requests buffer size="
     // << requestsBuffer_.size();
 
-    if (!requestsBuffer_.empty())
+    if (connPtr->connected())
     {
-        auto &reqAndCallback = requestsBuffer_.front();
-        sendReq(connPtr, reqAndCallback.first);
-        pipeliningCallbacks_.push(std::move(reqAndCallback));
-        requestsBuffer_.pop();
+        if (!requestsBuffer_.empty())
+        {
+            auto &reqAndCallback = requestsBuffer_.front();
+            sendReq(connPtr, reqAndCallback.first);
+            pipeliningCallbacks_.push(std::move(reqAndCallback));
+            requestsBuffer_.pop();
+        }
+        else
+        {
+            if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+            {
+                tcpClientPtr_.reset();
+            }
+        }
     }
     else
     {
-        if (resp->ifCloseConnection() && pipeliningCallbacks_.empty())
+        while (!pipeliningCallbacks_.empty())
         {
-            tcpClientPtr_.reset();
+            auto cb = std::move(pipeliningCallbacks_.front());
+            pipeliningCallbacks_.pop();
+            cb.second(ReqResult::NetworkFailure, nullptr);
         }
     }
 }
@@ -509,7 +549,12 @@ void HttpClientImpl::onRecvMessage(const trantor::TcpConnectionPtr &connPtr,
     auto msgSize = msg->readableBytes();
     while (msg->readableBytes() > 0)
     {
-        assert(!pipeliningCallbacks_.empty());
+        if (pipeliningCallbacks_.empty())
+        {
+            LOG_ERROR << "More responses than expected!";
+            connPtr->shutdown();
+            return;
+        }
         auto &firstReq = pipeliningCallbacks_.front();
         if (firstReq.first->method() == Head)
         {
@@ -541,25 +586,29 @@ HttpClientPtr HttpClient::newHttpClient(const std::string &ip,
                                         HttpAppFramework *app,
                                         bool useSSL,
                                         trantor::EventLoop *loop,
-                                        bool useOldTLS)
+                                        bool useOldTLS,
+                                        bool validateCert)
 {
     bool isIpv6 = ip.find(':') == std::string::npos ? false : true;
     return std::make_shared<HttpClientImpl>(
         loop == nullptr ? app->getLoop() : loop,
         trantor::InetAddress(ip, port, isIpv6),
         useSSL,
-        useOldTLS);
+        useOldTLS,
+        validateCert);
 }
 
 HttpClientPtr HttpClient::newHttpClient(const std::string &hostString,
                                         HttpAppFramework *app,
                                         trantor::EventLoop *loop,
-                                        bool useOldTLS)
+                                        bool useOldTLS,
+                                        bool validateCert)
 {
     auto ret = std::make_shared<HttpClientImpl>(loop == nullptr ? app->getLoop()
                                                                 : loop,
                                                 hostString,
-                                                useOldTLS);
+                                                useOldTLS,
+                                                validateCert);
     ret->app_ = HttpAppFrameworkImpl::getImpl(app);
     return ret;
 }

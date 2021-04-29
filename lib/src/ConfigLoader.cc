@@ -337,12 +337,13 @@ static void loadApp(HttpAppFrameworkImpl *app, const Json::Value &json)
             }
             else
             {
-                app->addALocation(uri,
-                                  defaultContentType,
-                                  alias,
-                                  isCaseSensitive,
-                                  allAll,
-                                  isRecursive);
+                // FIXME: 1.5.1
+                // app->addALocation(uri,
+                //                  defaultContentType,
+                //                  alias,
+                //                  isCaseSensitive,
+                //                  allAll,
+                //                  isRecursive);
             }
         }
     }
@@ -396,6 +397,12 @@ static void loadApp(HttpAppFrameworkImpl *app, const Json::Value &json)
     if (runAsDaemon)
     {
         app->enableRunAsDaemon();
+    }
+    // handle SIGTERM
+    auto handleSigterm = json.get("handle_sig_term", true).asBool();
+    if (!handleSigterm)
+    {
+        app->disableSigtermHandling();
     }
     // relaunch
     auto relaunch = json.get("relaunch_on_error", false).asBool();
@@ -494,6 +501,10 @@ static void loadDbClients(HttpAppFrameworkImpl *app,
             password = client.get("password", "").asString();
         }
         auto connNum = client.get("connection_number", 1).asUInt();
+        if (connNum == 1)
+        {
+            connNum = client.get("number_of_connections", 1).asUInt();
+        }
         auto name = client.get("name", "default").asString();
         auto filename = client.get("filename", "").asString();
         auto isFast = client.get("is_fast", false).asBool();
@@ -515,8 +526,33 @@ static void loadDbClients(HttpAppFrameworkImpl *app,
                             characterSet);
     }
 }
-static void loadListeners(HttpAppFrameworkImpl *app,
-                          const Json::Value &listeners)
+
+static void loadRedisClients(HttpAppFramework *app,
+                             const Json::Value &redisClients)
+{
+    if (!redisClients)
+        return;
+    for (auto const &client : redisClients)
+    {
+        auto host = client.get("host", "127.0.0.1").asString();
+        auto port = client.get("port", 6379).asUInt();
+        auto password = client.get("passwd", "").asString();
+        if (password.empty())
+        {
+            password = client.get("password", "").asString();
+        }
+        auto connNum = client.get("connection_number", 1).asUInt();
+        if (connNum == 1)
+        {
+            connNum = client.get("number_of_connections", 1).asUInt();
+        }
+        auto name = client.get("name", "default").asString();
+        auto isFast = client.get("is_fast", false).asBool();
+        app->createRedisClient(host, port, name, password, connNum, isFast);
+    }
+}
+
+static void loadListeners(HttpAppFramework *app, const Json::Value &listeners)
 {
     if (!listeners)
         return;
@@ -548,4 +584,5 @@ void ConfigLoader::load()
     loadSSL(app_, configJsonRoot_["ssl"]);
     loadListeners(app_, configJsonRoot_["listeners"]);
     loadDbClients(app_, configJsonRoot_["db_clients"]);
+    loadRedisClients(app_, configJsonRoot_["redis_clients"]);
 }

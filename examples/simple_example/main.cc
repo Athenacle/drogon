@@ -213,7 +213,16 @@ int main()
                        const std::string &,
                        int)>
         func = std::bind(&A::handle, &tmp, _1, _2, _3, _4, _5, _6, _7);
+
     app->registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
+
+    app->registerHandler(
+        "/api/v1/this_will_fail",
+        [](const HttpRequestPtr &req,
+           const HttpOperation &,
+           std::function<void(const HttpResponsePtr &)> &&callback) {
+            throw std::runtime_error("this should fail");
+        });
 
     app->setDocumentRoot("./");
     app->enableSession(60);
