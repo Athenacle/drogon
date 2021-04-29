@@ -138,11 +138,8 @@ class HttpController : public DrObject<T>, public HttpControllerBase
       public:
         methodRegistrator()
         {
-            // FIXME: change this
-            // LOG_ERROR << "Not Implemented";
             if (AutoCreation)
             {
-                // T::initPathRouting();
                 HttpAppFrameworkManager::instance().pushAutoCreationFunction(
                     [](drogon::HttpAppFramework *app) {
                         T::initPathRouting(app);

@@ -337,13 +337,13 @@ static void loadApp(HttpAppFrameworkImpl *app, const Json::Value &json)
             }
             else
             {
-                // FIXME: 1.5.1
-                // app->addALocation(uri,
-                //                  defaultContentType,
-                //                  alias,
-                //                  isCaseSensitive,
-                //                  allAll,
-                //                  isRecursive);
+                app->addALocation(uri,
+                                  defaultContentType,
+                                  alias,
+                                  isCaseSensitive,
+                                  allAll,
+                                  isRecursive,
+                                  {});  // just give it an empty vectory
             }
         }
     }

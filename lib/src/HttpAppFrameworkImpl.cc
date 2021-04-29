@@ -135,8 +135,8 @@ void defaultExceptionHandler(
     LOG_ERROR << "Unhandled exception in " << req->query()
               << ", what():" << e.what();
     const auto &handler = req->getApp()->getCustomErrorHandler();
-    // FIXME: v1.5.1
-    // callback(handler(k500InternalServerError));
+    callback(
+        handler(k500InternalServerError, req, req->getApp()->getOperations()));
 }
 
 static void godaemon()
