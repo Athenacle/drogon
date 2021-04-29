@@ -263,6 +263,8 @@ void StaticFileRouter::sendStaticFileResponse(
     HttpResponsePtr cachedResp;
     auto &cacheMap = staticFilesCache_->getThreadData();
     auto iter = cacheMap.find(filePath);
+    auto &op = app_->getOperations();
+
     if (iter != cacheMap.end())
     {
         cachedResp = iter->second;
@@ -277,6 +279,13 @@ void StaticFileRouter::sendStaticFileResponse(
     {
         if (cachedResp)
         {
+            if (req->method() != Get)
+            {
+                callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                                       req,
+                                                       op));
+                return;
+            }
             if (static_cast<HttpResponseImpl *>(cachedResp.get())
                     ->getHeaderBy("last-modified") ==
                 req->getHeaderBy("if-modified-since"))
@@ -298,6 +307,13 @@ void StaticFileRouter::sendStaticFileResponse(
             {
                 fileExists = true;
                 LOG_TRACE << "last modify time:" << fileStat.st_mtime;
+                if (req->method() != Get)
+                {
+                    callback(app_->getCustomErrorHandler()(k405MethodNotAllowed,
+                                                           req,
+                                                           op));
+                    return;
+                }
                 struct tm tm1;
 #ifdef _WIN32
                 gmtime_s(&tm1, &fileStat.st_mtime);
@@ -332,6 +348,12 @@ void StaticFileRouter::sendStaticFileResponse(
     }
     if (cachedResp)
     {
+        if (req->method() != Get)
+        {
+            callback(app_->getCustomErrorHandler()(
+                k405MethodNotAllowed, req, req->getApp()->getOperations()));
+            return;
+        }
         LOG_TRACE << "Using file cache";
         app_->callCallback(req, cachedResp, callback);
         return;
@@ -346,6 +368,13 @@ void StaticFileRouter::sendStaticFileResponse(
             return;
         }
     }
+
+    if (req->method() != Get)
+    {
+        callback(app_->getCustomErrorHandler()(k405MethodNotAllowed, req, op));
+        return;
+    }
+
     HttpResponsePtr resp;
     auto &acceptEncoding = req->getHeaderBy("accept-encoding");
 

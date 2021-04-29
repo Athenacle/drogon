@@ -35,7 +35,6 @@ void HttpAppFrameworkManager::loopAppFramework(
 
 HttpAppFrameworkManager::~HttpAppFrameworkManager()
 {
-    LOG_TRACE << apps_.size() << " instance of HttpAppFramework not freed";
     apps_.clear();
     autoCreationHandlerRegistor_.clear();
 }

@@ -210,6 +210,50 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(HttpAppFrameworkImpl *app,
 
 HttpResponsePtr HttpResponse::newFileResponse(
     HttpAppFrameworkImpl *app,
+    const unsigned char *pBuffer,
+    size_t bufferLength,
+    const std::string &attachmentFileName,
+    ContentType type)
+{
+    // Make Raw HttpResponse
+    auto resp = std::make_shared<HttpResponseImpl>(app);
+
+    // Set response body and length
+    resp->setBody(
+        std::string(reinterpret_cast<const char *>(pBuffer), bufferLength));
+
+    // Set status of message
+    resp->setStatusCode(k200OK);
+
+    // Check for type and assign proper content type in header
+    if (type != CT_NONE)
+    {
+        resp->setContentTypeCode(type);
+    }
+    else if (!attachmentFileName.empty())
+    {
+        resp->setContentTypeCode(drogon::getContentType(attachmentFileName));
+    }
+    else
+    {
+        resp->setContentTypeCode(
+            CT_APPLICATION_OCTET_STREAM);  // default content-type for file;
+    }
+
+    // Add additional header values
+    if (!attachmentFileName.empty())
+    {
+        resp->addHeader("Content-Disposition",
+                        "attachment; filename=" + attachmentFileName);
+    }
+
+    // Finalize and return response
+    doResponseCreateAdvices(app, resp);
+    return resp;
+}
+
+HttpResponsePtr HttpResponse::newFileResponse(
+    HttpAppFrameworkImpl *app,
     const std::string &fullPath,
     const std::string &attachmentFileName,
     ContentType type)
@@ -318,15 +362,15 @@ void HttpResponseImpl::makeHeaderString(trantor::MsgBuffer &buffer)
                 filestat.st_size);
         }
         buffer.hasWritten(len);
-        if (headers_.find("Connection") == headers_.end())
+        if (headers_.find("connection") == headers_.end())
         {
             if (closeConnection_)
             {
-                buffer.append("Connection: close\r\n");
+                buffer.append("connection: close\r\n");
             }
             else if (version_ == Version::kHttp10)
             {
-                buffer.append("Connection: Keep-Alive\r\n");
+                buffer.append("connection: Keep-Alive\r\n");
             }
         }
         buffer.append(contentTypeString_.data(), contentTypeString_.length());
@@ -374,7 +418,7 @@ void HttpResponseImpl::renderToBuffer(trantor::MsgBuffer &buffer)
     // output Date header
     if (!passThrough_ && app_->sendDateHeader())
     {
-        buffer.append("Date: ");
+        buffer.append("date: ");
         buffer.append(utils::getHttpFullDate(trantor::Date::date()),
                       httpFullDateStringLength);
         buffer.append("\r\n\r\n");
@@ -444,7 +488,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::renderToBuffer()
     // output Date header
     if (!passThrough_ && app_->sendDateHeader())
     {
-        httpString->append("Date: ");
+        httpString->append("date: ");
         auto datePos = httpString->readableBytes();
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
                            httpFullDateStringLength);
@@ -492,7 +536,7 @@ std::shared_ptr<trantor::MsgBuffer> HttpResponseImpl::
     // output Date header
     if (!passThrough_ && app_->sendDateHeader())
     {
-        httpString->append("Date: ");
+        httpString->append("date: ");
         httpString->append(utils::getHttpFullDate(trantor::Date::date()),
                            httpFullDateStringLength);
         httpString->append("\r\n\r\n");

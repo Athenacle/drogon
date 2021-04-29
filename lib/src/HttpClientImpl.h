@@ -26,56 +26,61 @@
 
 namespace drogon
 {
-class HttpClientImpl : public HttpClient,
-                       public std::enable_shared_from_this<HttpClientImpl>
+class HttpClientImpl final : public HttpClient,
+                             public std::enable_shared_from_this<HttpClientImpl>
 {
   public:
     HttpClientImpl(trantor::EventLoop *loop,
                    const trantor::InetAddress &addr,
                    bool useSSL = false,
-                   bool useOldTLS = false);
+                   bool useOldTLS = false,
+                   bool validateCert = true);
     HttpClientImpl(trantor::EventLoop *loop,
                    const std::string &hostString,
-                   bool useOldTLS = false);
-    virtual void sendRequest(const HttpRequestPtr &req,
-                             const HttpReqCallback &callback,
-                             double timeout = 0) override;
-    virtual void sendRequest(const HttpRequestPtr &req,
-                             HttpReqCallback &&callback,
-                             double timeout = 0) override;
-    virtual trantor::EventLoop *getLoop() override
+                   bool useOldTLS = false,
+                   bool validateCert = true);
+    void sendRequest(const HttpRequestPtr &req,
+                     const HttpReqCallback &callback,
+                     double timeout = 0) override;
+    void sendRequest(const HttpRequestPtr &req,
+                     HttpReqCallback &&callback,
+                     double timeout = 0) override;
+    trantor::EventLoop *getLoop() override
     {
         return loop_;
     }
-    virtual void setPipeliningDepth(size_t depth) override
+    void setPipeliningDepth(size_t depth) override
     {
         pipeliningDepth_ = depth;
     }
     ~HttpClientImpl();
 
-    virtual void enableCookies(bool flag = true) override
+    void enableCookies(bool flag = true) override
     {
         enableCookies_ = flag;
     }
 
-    virtual void addCookie(const std::string &key,
-                           const std::string &value) override
+    void addCookie(const std::string &key, const std::string &value) override
     {
         validCookies_.emplace_back(Cookie(key, value));
     }
 
-    virtual void addCookie(const Cookie &cookie) override
+    void addCookie(const Cookie &cookie) override
     {
         validCookies_.emplace_back(cookie);
     }
 
-    virtual size_t bytesSent() const override
+    size_t bytesSent() const override
     {
         return bytesSent_;
     }
-    virtual size_t bytesReceived() const override
+    size_t bytesReceived() const override
     {
         return bytesReceived_;
+    }
+    void setUserAgent(const std::string &userAgent) override
+    {
+        userAgent_ = userAgent;
     }
 
   private:
@@ -83,6 +88,7 @@ class HttpClientImpl : public HttpClient,
     trantor::EventLoop *loop_;
     trantor::InetAddress serverAddr_;
     bool useSSL_;
+    bool validateCert_;
     void sendReq(const trantor::TcpConnectionPtr &connPtr,
                  const HttpRequestPtr &req);
     void sendRequestInLoop(const HttpRequestPtr &req,
@@ -93,7 +99,7 @@ class HttpClientImpl : public HttpClient,
     void handleCookies(const HttpResponseImplPtr &resp);
     void handleResponse(const HttpResponseImplPtr &resp,
                         std::pair<HttpRequestPtr, HttpReqCallback> &&reqAndCb,
-                        const trantor::TcpConnectionPtr &connPtr = nullptr);
+                        const trantor::TcpConnectionPtr &connPtr);
     void createTcpClient();
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> pipeliningCallbacks_;
     std::queue<std::pair<HttpRequestPtr, HttpReqCallback>> requestsBuffer_;
@@ -108,6 +114,7 @@ class HttpClientImpl : public HttpClient,
     bool dns_{false};
     std::shared_ptr<trantor::Resolver> resolverPtr_;
     bool useOldTLS_{false};
+    std::string userAgent_{"DrogonClient"};
 };
 using HttpClientImplPtr = std::shared_ptr<HttpClientImpl>;
 }  // namespace drogon

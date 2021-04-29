@@ -289,6 +289,7 @@ void doTest(const HttpClientPtr &client,
                                 outputBad(req, isHttps, result, resp);
                             }
                         });
+
     // Post json again
     req = HttpRequest::newHttpJsonRequest(app, json);
     req->setMethod(drogon::Post);
@@ -313,7 +314,32 @@ void doTest(const HttpClientPtr &client,
                                 outputBad(req, isHttps, result, resp);
                             }
                         });
-
+    // Test 404
+    req = HttpRequest::newHttpJsonRequest(app, json);
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/apitest/notFoundRouting");
+    client->sendRequest(req,
+                        [req, isHttps](ReqResult result,
+                                       const HttpResponsePtr &resp) {
+                            if (result == ReqResult::Ok)
+                            {
+                                if (resp->getStatusCode() == k404NotFound)
+                                {
+                                    outputGood(req, isHttps);
+                                }
+                                else
+                                {
+                                    LOG_DEBUG << resp->getBody();
+                                    LOG_ERROR << "Error!";
+                                    exit(1);
+                                }
+                            }
+                            else
+                            {
+                                LOG_ERROR << "Error!";
+                                exit(1);
+                            }
+                        });
     /// 1 Get /
     req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
@@ -872,6 +898,33 @@ void doTest(const HttpClientPtr &client,
                                 outputBad(req, isHttps, result, resp);
                             }
                         });
+    // Test 405
+    req = HttpRequest::newHttpRequest(app);
+    req->setMethod(drogon::Post);
+    req->setPath("/drogon.jpg");
+    client->sendRequest(
+        req,
+        [req, client, isHttps, &pro](ReqResult result,
+                                     const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                if (resp->getStatusCode() == k405MethodNotAllowed)
+                {
+                    outputGood(req, isHttps);
+                }
+                else
+                {
+                    LOG_DEBUG << resp->getBody().length();
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
     /// Test file download
     req = HttpRequest::newHttpRequest(app);
     req->setMethod(drogon::Get);
@@ -1173,6 +1226,75 @@ void doTest(const HttpClientPtr &client,
                 outputBad(req, isHttps, result, resp);
             }
         });
+    req = HttpRequest::newHttpRequest(app);
+    req->setMethod(drogon::Get);
+    req->setPath("/api/v1/this_will_fail");
+    client->sendRequest(
+        req, [req, isHttps](ReqResult result, const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+            {
+                if (resp->getStatusCode() != k500InternalServerError)
+                {
+                    LOG_DEBUG << resp->getStatusCode();
+                    LOG_ERROR << "Error!";
+                    exit(1);
+                }
+                outputGood(req, isHttps);
+            }
+            else
+            {
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+        });
+
+#ifdef __cpp_impl_coroutine
+    // Test coroutine requests
+    [client, isHttps]() -> AsyncTask {
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get");
+            auto resp = co_await client->sendRequestCoro(req);
+            if (resp->getBody() != "DEADBEEF")
+            {
+                LOG_ERROR << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+            outputGood(req, isHttps);
+        }
+        catch (const std::exception &e)
+        {
+            LOG_DEBUG << e.what();
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    }();
+
+    // Test coroutine request with co_return
+    [client, isHttps]() -> AsyncTask {
+        try
+        {
+            auto req = HttpRequest::newHttpRequest();
+            req->setPath("/api/v1/corotest/get2");
+            auto resp = co_await client->sendRequestCoro(req);
+            if (resp->getBody() != "BADDBEEF")
+            {
+                LOG_ERROR << resp->getBody();
+                LOG_ERROR << "Error!";
+                exit(1);
+            }
+            outputGood(req, isHttps);
+        }
+        catch (const std::exception &e)
+        {
+            LOG_DEBUG << e.what();
+            LOG_ERROR << "Error!";
+            exit(1);
+        }
+    }();
+#endif
 }
 void loadFileLengths()
 {
@@ -1219,6 +1341,8 @@ int main(int argc, char *argv[])
             std::promise<int> pro2;
             auto sslClient =
                 op.newHttpClient("127.0.0.1", 8849, true, loop[1].getLoop());
+            // auto sslClient = HttpClient::newHttpClient(
+            //     "127.0.0.1", 8849, true, loop[1].getLoop(), false, false);
             if (sessionID)
                 sslClient->addCookie(sessionID);
             doTest(sslClient, pro2, true);

@@ -1,7 +1,7 @@
 /**
  *
  *  @file HttpRequest.h
- *  An Tao
+ *  @author An Tao
  *
  *  Copyright 2018, An Tao.  All rights reserved.
  *  https://github.com/an-tao/drogon
@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/utils/string_view.h>
 #include <drogon/DrClassMap.h>
 #include <drogon/HttpTypes.h>
@@ -74,7 +75,7 @@ template <>
 std::shared_ptr<Json::Value> fromRequest(const HttpRequest &req);
 
 /// Abstract class for webapp developer to get or set the Http request;
-class HttpRequest
+class DROGON_EXPORT HttpRequest
 {
   protected:
     HttpAppFrameworkImpl *app_;
@@ -336,6 +337,16 @@ class HttpRequest
 
     /// Set the path of the request
     virtual void setPath(const std::string &path) = 0;
+
+    /**
+     * @brief The default behavior is to encode the value of setPath
+     * using urlEncode. Setting the path encode to false avoid the
+     * value of path will be changed by the library
+     *
+     * @param bool true --> the path will be url encoded
+     *             false --> using value of path as it is set
+     */
+    virtual void setPathEncode(bool) = 0;
 
     /// Set the parameter of the request
     virtual void setParameter(const std::string &key,

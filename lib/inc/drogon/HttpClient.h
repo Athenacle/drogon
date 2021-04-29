@@ -14,6 +14,7 @@
  */
 #pragma once
 
+#include <drogon/exports.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/drogon_callbacks.h>
 #include <drogon/HttpResponse.h>
@@ -23,6 +24,11 @@
 #include <functional>
 #include <memory>
 #include <future>
+#include "drogon/HttpBinder.h"
+
+#ifdef __cpp_impl_coroutine
+#include <drogon/utils/coroutine.h>
+#endif
 
 namespace drogon
 {
@@ -30,6 +36,26 @@ class HttpAppFrameworkImpl;
 class HttpAppFramework;
 class HttpClient;
 using HttpClientPtr = std::shared_ptr<HttpClient>;
+#ifdef __cpp_impl_coroutine
+namespace internal
+{
+struct HttpRespAwaiter : public CallbackAwaiter<HttpResponsePtr>
+{
+    HttpRespAwaiter(HttpClient *client, HttpRequestPtr req, double timeout)
+        : client_(client), req_(std::move(req)), timeout_(timeout)
+    {
+    }
+
+    void await_suspend(std::coroutine_handle<> handle);
+
+  private:
+    HttpClient *client_;
+    HttpRequestPtr req_;
+    double timeout_;
+};
+
+}  // namespace internal
+#endif
 
 /// Asynchronous http client
 /**
@@ -43,9 +69,8 @@ using HttpClientPtr = std::shared_ptr<HttpClient>;
  * implementing the class, the shared_ptr is retained in the framework until all
  * response callbacks are invoked without fear of accidental deconstruction.
  *
- * TODO:SSL server verification
  */
-class HttpClient : public trantor::NonCopyable
+class DROGON_EXPORT HttpClient : public trantor::NonCopyable
 {
   public:
     /**
@@ -117,6 +142,26 @@ class HttpClient : public trantor::NonCopyable
         return f.get();
     }
 
+#ifdef __cpp_impl_coroutine
+    /**
+     * @brief Send a request via coroutines to the server and return an
+     * awaiter what could be `co_await`-ed to retrieve the response
+     * (HttpResponsePtr)
+     *
+     * @param req
+     * @param timeout In seconds. If the response is not received within the
+     * timeout, A `std::runtime_error` with the message "Timeout" is thrown.
+     * The zero value by default disables the timeout.
+     *
+     * @return internal::HttpRespAwaiter. Await on it to get the response
+     */
+    internal::HttpRespAwaiter sendRequestCoro(HttpRequestPtr req,
+                                              double timeout = 0)
+    {
+        return internal::HttpRespAwaiter(this, std::move(req), timeout);
+    }
+#endif
+
     /// Set the pipelining depth, which is the number of requests that are not
     /// responding.
     /**
@@ -154,6 +199,15 @@ class HttpClient : public trantor::NonCopyable
     virtual void addCookie(const Cookie &cookie) = 0;
 
     /**
+     * @brief Set the user_agent header, the default value is 'DrogonClient' if
+     * this method is not used.
+     *
+     * @param userAgent The user_agent value, if it is empty, the user_agent
+     * header is not sent to the server.
+     */
+    virtual void setUserAgent(const std::string &userAgent) = 0;
+
+    /**
      * @brief Creaet a new HTTP client which use ip and port to connect to
      * server
      *
@@ -174,7 +228,8 @@ class HttpClient : public trantor::NonCopyable
                                        HttpAppFramework *app,
                                        bool useSSL = false,
                                        trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false);
+                                       bool useOldTLS = false,
+                                       bool validateCert = true);
 
     /// Get the event loop of the client;
     virtual trantor::EventLoop *getLoop() = 0;
@@ -213,7 +268,8 @@ class HttpClient : public trantor::NonCopyable
     static HttpClientPtr newHttpClient(const std::string &hostString,
                                        HttpAppFramework *app,
                                        trantor::EventLoop *loop = nullptr,
-                                       bool useOldTLS = false);
+                                       bool useOldTLS = false,
+                                       bool validateCert = true);
 
     virtual ~HttpClient()
     {
@@ -228,5 +284,37 @@ class HttpClient : public trantor::NonCopyable
     HttpAppFrameworkImpl *app_;
     HttpClient() = default;
 };
+
+#ifdef __cpp_impl_coroutine
+inline void internal::HttpRespAwaiter::await_suspend(
+    std::coroutine_handle<> handle)
+{
+    assert(client_ != nullptr);
+    assert(req_ != nullptr);
+    client_->sendRequest(
+        req_,
+        [handle = std::move(handle), this](ReqResult result,
+                                           const HttpResponsePtr &resp) {
+            if (result == ReqResult::Ok)
+                setValue(resp);
+            else
+            {
+                std::string reason;
+                if (result == ReqResult::BadResponse)
+                    reason = "BadResponse";
+                else if (result == ReqResult::NetworkFailure)
+                    reason = "NetworkFailure";
+                else if (result == ReqResult::BadServerAddress)
+                    reason = "BadServerAddress";
+                else if (result == ReqResult::Timeout)
+                    reason = "Timeout";
+                setException(
+                    std::make_exception_ptr(std::runtime_error(reason)));
+            }
+            handle.resume();
+        },
+        timeout_);
+}
+#endif
 
 }  // namespace drogon

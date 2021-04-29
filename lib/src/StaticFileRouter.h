@@ -160,7 +160,7 @@ class StaticFileRouter
             if (!defaultContentType.empty())
             {
                 defaultContentType_ =
-                    std::string{"Content-Type: "} + defaultContentType + "\r\n";
+                    std::string{"content-type: "} + defaultContentType + "\r\n";
             }
         }
     };
