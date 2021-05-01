@@ -92,7 +92,7 @@ HttpResponsePtr SecureSSLRedirector::redirectToSSL(
         }
         else
         {
-            return HttpResponse::newNotFoundResponse(req->getApp());
+            return HttpResponse::newNotFoundResponse(req->getApp(), nullptr);
         }
     }
 }

@@ -19,6 +19,7 @@
 #include <drogon/Cookie.h>
 #include <drogon/HttpTypes.h>
 #include <drogon/HttpViewData.h>
+#include <drogon/HttpRequest.h>
 #include <json/json.h>
 #include <memory>
 #include <string>
@@ -331,7 +332,9 @@ class DROGON_EXPORT HttpResponse
     /// of text/html.
     static HttpResponsePtr newHttpResponse(HttpAppFrameworkImpl *);
     /// Create a response which returns a 404 page.
-    static HttpResponsePtr newNotFoundResponse(HttpAppFrameworkImpl *);
+    // static HttpResponsePtr newNotFoundResponse(HttpAppFrameworkImpl *);
+    static HttpResponsePtr newNotFoundResponse(HttpAppFrameworkImpl *,
+                                               const HttpRequestPtr &);
     /// Create a response which returns a json object. Its content type is set
     /// to set/json.
     static HttpResponsePtr newHttpJsonResponse(HttpAppFrameworkImpl *,
@@ -372,6 +375,7 @@ class DROGON_EXPORT HttpResponse
      */
     static HttpResponsePtr newFileResponse(
         HttpAppFrameworkImpl *,
+        const HttpRequestPtr &,
         const std::string &fullPath,
         const std::string &attachmentFileName = "",
         ContentType type = CT_NONE);
@@ -388,6 +392,7 @@ class DROGON_EXPORT HttpResponse
      */
     static HttpResponsePtr newFileResponse(
         HttpAppFrameworkImpl *,
+        const HttpRequestPtr &,
         const unsigned char *pBuffer,
         size_t bufferLength,
         const std::string &attachmentFileName = "",

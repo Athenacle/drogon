@@ -228,28 +228,6 @@ void HttpSimpleControllersRouter::doControllerHandler(
                 responsePtr.reset();
             }
         }
-        /*
-        <<<<<<< HEAD
-                controller->asyncHandleHttpRequest(
-                    req,
-                    op_,
-                    [this, req, callback = std::move(callback), &ctrlBinderPtr](
-                        const HttpResponsePtr &resp) {
-                        auto newResp = resp;
-                        if (resp->expiredTime() >= 0 &&
-                            resp->statusCode() != k404NotFound)
-                        {
-                            // cache the response;
-                            static_cast<HttpResponseImpl *>(resp.get())
-                                ->makeHeaderString();
-                            auto loop = req->getLoop();
-
-                            if (loop->isInLoopThread())
-                            {
-                                ctrlBinderPtr->responseCache_.setThreadData(resp);
-                            }
-                            else
-        =======*/
         try
         {
             controller->asyncHandleHttpRequest(
@@ -298,7 +276,7 @@ void HttpSimpleControllersRouter::doControllerHandler(
     {
         const std::string &ctrlName = ctrlBinderPtr->controllerName_;
         LOG_ERROR << "can't find controller " << ctrlName;
-        auto res = drogon::HttpResponse::newNotFoundResponse(app_);
+        auto res = drogon::HttpResponse::newNotFoundResponse(app_, req);
         invokeCallback(callback, req, res);
     }
 }

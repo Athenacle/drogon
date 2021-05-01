@@ -64,6 +64,9 @@ using ExceptionHandler =
 
 class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
 {
+  protected:
+    using RunCallback = std::function<void()>;
+
   public:
     virtual ~HttpAppFramework() = default;
 
@@ -76,8 +79,17 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * application;
      * This method can be called in the main thread or any other thread.
      * This method blocks the current thread until the main event loop exits.
+     *
+     * @param cb: call RunCallback `cb' just before EventLoop begins and after
+     * all initialization work finishes;
      */
-    virtual void run() = 0;
+
+    virtual void run(const RunCallback &cb) = 0;
+
+    /**
+     * call void run(RunCallback cb), which `cb' is a no-op function.
+     */
+    void run();
 
     /// Return true if the framework is running
     virtual bool isRunning() = 0;
@@ -135,9 +147,15 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
     /**
      * @param resp_generator is invoked when an error in the framework needs to
      * be sent to the client to provide a custom layout.
+     *
+     * @param cached indicate that error response will be cached. If false,
+     * error handler function resp_generator will be called each time when error
+     * occurs; otherwise resp_generator will called `several' times with `NULL'
+     * HttpRequestPtr and then store it for later use
      */
     virtual HttpAppFramework &setCustomErrorHandler(
-        customErrorHandlerFunction &&resp_generator) = 0;
+        customErrorHandlerFunction &&resp_generator,
+        bool cached = false) = 0;
 
     /// Get custom error handler
     /**

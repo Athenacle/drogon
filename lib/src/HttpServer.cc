@@ -131,7 +131,7 @@ static void defaultHttpAsyncCallback(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &resp)> &&callback)
 {
-    auto resp = HttpResponse::newNotFoundResponse(req->getApp());
+    auto resp = HttpResponse::newNotFoundResponse(req->getApp(), req);
     resp->setCloseConnection(true);
     callback(resp);
 }
@@ -141,7 +141,7 @@ static void defaultWebSockAsyncCallback(
     std::function<void(const HttpResponsePtr &resp)> &&callback,
     const WebSocketConnectionImplPtr &)
 {
-    auto resp = HttpResponse::newNotFoundResponse(req->getApp());
+    auto resp = HttpResponse::newNotFoundResponse(req->getApp(), req);
     resp->setCloseConnection(true);
     callback(resp);
 }

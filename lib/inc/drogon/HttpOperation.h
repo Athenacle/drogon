@@ -58,6 +58,8 @@ class HttpOperation
 
     std::function<HttpResponsePtr()> notFound_;
 
+    std::function<HttpResponsePtr(HttpRequestPtr &)> notFound__;
+
     std::function<HttpResponsePtr(const std::string &, const HttpViewData &)>
         httpView_;
 

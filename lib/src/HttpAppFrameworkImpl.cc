@@ -67,6 +67,11 @@
 using namespace drogon;
 using namespace std::placeholders;
 
+void HttpAppFramework::run()
+{
+    run([]() {});
+}
+
 HttpAppFrameworkImpl::HttpAppFrameworkImpl()
     : op_(HttpOperation::createInstance(this)),
       staticFileRouterPtr_(new StaticFileRouter(this)),
@@ -444,7 +449,7 @@ HttpAppFramework &HttpAppFrameworkImpl::setSSLFiles(const std::string &certPath,
     return *this;
 }
 
-void HttpAppFrameworkImpl::run()
+void HttpAppFrameworkImpl::run(const RunCallback &cb)
 {
     HttpAppFrameworkManager::instance().registerAutoCreationHandlers(this);
 
@@ -588,6 +593,7 @@ void HttpAppFrameworkImpl::run()
         }
         beginningAdvices_.clear();
     });
+    cb();
     getLoop()->loop();
 }
 
@@ -925,6 +931,7 @@ void HttpAppFrameworkImpl::forward(
         clientPtr->sendRequest(
             req,
             [callback = std::move(callback),
+             &req,
              this](ReqResult result, const HttpResponsePtr &resp) {
                 if (result == ReqResult::Ok)
                 {
@@ -933,7 +940,7 @@ void HttpAppFrameworkImpl::forward(
                 }
                 else
                 {
-                    callback(HttpResponse::newNotFoundResponse(this));
+                    callback(HttpResponse::newNotFoundResponse(this, req));
                 }
             },
             timeout);
@@ -1087,10 +1094,12 @@ bool HttpAppFrameworkImpl::areAllDbClientsAvailable() const noexcept
 }
 
 HttpAppFramework &HttpAppFrameworkImpl::setCustomErrorHandler(
-    customErrorHandlerFunction &&resp_generator)
+    customErrorHandlerFunction &&resp_generator,
+    bool cached)
 {
     customErrorHandler_ = std::move(resp_generator);
     usingCustomErrorHandler_ = true;
+    cachedErrorResponse_ = cached;
     return *this;
 }
 

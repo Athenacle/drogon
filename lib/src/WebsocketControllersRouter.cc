@@ -213,7 +213,7 @@ void WebsocketControllersRouter::route(
             return;
         }
     }
-    auto resp = drogon::HttpResponse::newNotFoundResponse(app_);
+    auto resp = drogon::HttpResponse::newNotFoundResponse(app_, req);
     resp->setCloseConnection(true);
     callback(resp);
 }

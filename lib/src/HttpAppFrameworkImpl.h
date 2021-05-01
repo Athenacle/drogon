@@ -87,7 +87,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
     HttpAppFramework &setSSLFiles(const std::string &certPath,
                                   const std::string &keyPath) override;
-    void run() override;
+    void run();
+
+    virtual void run(const RunCallback &cb) override;
+
     HttpAppFramework &registerWebSocketController(
         const std::string &pathName,
         const std::string &ctrlName,
@@ -111,7 +114,8 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     }
 
     HttpAppFramework &setCustomErrorHandler(
-        customErrorHandlerFunction &&resp_generator) override;
+        customErrorHandlerFunction &&resp_generator,
+        bool cached) override;
 
     const HttpResponsePtr &getCustom404Page();
 
@@ -540,6 +544,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
 
     const customErrorHandlerFunction &getCustomErrorHandler() const override;
 
+    bool cachedCustomErrorResponse() const
+    {
+        return cachedErrorResponse_;
+    }
     // bool areAllDbClientsAvailable() const noexcept override;
 
     bool isUsingCustomErrorHandler() const
@@ -651,6 +659,7 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     Json::Value jsonConfig_;
     HttpResponsePtr custom404_;
     customErrorHandlerFunction customErrorHandler_ = &defaultErrorHandler;
+    bool cachedErrorResponse_{false};
     static InitBeforeMainFunction initFirst_;
     bool enableServerHeader_{true};
     bool enableDateHeader_{true};

@@ -132,7 +132,7 @@ void StaticFileRouter::route(
             struct stat fileStat;
             if (stat(filePath.c_str(), &fileStat) != 0)
             {
-                callback(HttpResponse::newNotFoundResponse(app_));
+                callback(HttpResponse::newNotFoundResponse(app_, req));
                 return;
             }
             if (S_ISDIR(fileStat.st_mode))
@@ -250,7 +250,7 @@ void StaticFileRouter::route(
             }
         }
     }
-    callback(HttpResponse::newNotFoundResponse(app_));
+    callback(HttpResponse::newNotFoundResponse(app_, req));
 }
 
 void StaticFileRouter::sendStaticFileResponse(
@@ -341,7 +341,7 @@ void StaticFileRouter::sendStaticFileResponse(
             }
             else
             {
-                callback(HttpResponse::newNotFoundResponse(app_));
+                callback(HttpResponse::newNotFoundResponse(app_, req));
                 return;
             }
         }
@@ -364,7 +364,7 @@ void StaticFileRouter::sendStaticFileResponse(
         if (stat(filePath.c_str(), &fileStat) != 0 ||
             !S_ISREG(fileStat.st_mode))
         {
-            callback(HttpResponse::newNotFoundResponse(app_));
+            callback(HttpResponse::newNotFoundResponse(app_, req));
             return;
         }
     }
@@ -387,7 +387,7 @@ void StaticFileRouter::sendStaticFileResponse(
             S_ISREG(filestat.st_mode))
         {
             resp = HttpResponse::newFileResponse(
-                app_, brFileName, "", drogon::getContentType(filePath));
+                app_, req, brFileName, "", drogon::getContentType(filePath));
             resp->addHeader("Content-Encoding", "br");
         }
     }
@@ -401,12 +401,12 @@ void StaticFileRouter::sendStaticFileResponse(
             S_ISREG(filestat.st_mode))
         {
             resp = HttpResponse::newFileResponse(
-                app_, gzipFileName, "", drogon::getContentType(filePath));
+                app_, req, gzipFileName, "", drogon::getContentType(filePath));
             resp->addHeader("Content-Encoding", "gzip");
         }
     }
     if (!resp)
-        resp = HttpResponse::newFileResponse(app_, filePath);
+        resp = HttpResponse::newFileResponse(app_, req, filePath);
     if (resp->statusCode() != k404NotFound)
     {
         if (resp->getContentType() == CT_APPLICATION_OCTET_STREAM &&

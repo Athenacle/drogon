@@ -205,18 +205,26 @@ HttpOperation::HttpOperation(
 using namespace std::placeholders;
 using std::bind;
 
+static HttpResponsePtr emptyResponse(nullptr);
+static HttpRequestPtr emptyRequest(nullptr);
+
 HttpOperation *HttpOperation::createInstance(HttpAppFrameworkImpl *app)
 {
     HttpOperation *op = new HttpOperation;
     op->http_ = bind(&HttpResponse::newHttpResponse, app);
-    op->notFound_ = bind(&HttpResponse::newNotFoundResponse, app);
+
+    op->notFound__ = [app](HttpRequestPtr &req) {
+        return HttpResponse::newNotFoundResponse(app, req);
+    };
+    op->notFound_ = [app]() {
+        return HttpResponse::newNotFoundResponse(app, emptyRequest);
+    };
 
     op->redirect_ = bind(&HttpResponse::newRedirectionResponse, app, _1, _2);
-    // op->file_ = bind(&HttpResponse::newFileResponse, app, _1, _2, _3);
     op->file_ = [app](const std::string &a,
                       const std::string &b,
                       drogon::ContentType ct) {
-        return HttpResponse::newFileResponse(app, a, b, ct);
+        return HttpResponse::newFileResponse(app, emptyRequest, a, b, ct);
     };
 
     op->httpView_ = bind(&HttpResponse::newHttpViewResponse, app, _1, _2);
