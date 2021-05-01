@@ -30,7 +30,7 @@ using namespace std::chrono_literals;
 using namespace drogon::orm;
 
 #define RESET "\033[0m"
-#define RED "\033[31m" /* Red */
+#define RED "\033[31m"   /* Red */
 #define GREEN "\033[32m" /* Green */
 
 #ifdef __cpp_impl_coroutine
@@ -82,7 +82,7 @@ void testOutput(bool isGood, const std::string &testMessage)
 void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
 {
     // Prepare the test environment
-    *clientPtr << "DROP TABLE IF EXISTS USERS" >> [](const Result &r) {
+    *clientPtr << "DROP TABLE IF EXISTS USERS" >> [](const Result &) {
         testOutput(true, "postgresql - Prepare the test environment(0)");
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
@@ -101,7 +101,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
             admin boolean DEFAULT false,\
             CONSTRAINT user_id_org UNIQUE(user_id, org_name)\
         )" >>
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "postgresql - Prepare the test environment(1)");
         } >>
         [](const DrogonDbException &e) {
@@ -169,10 +169,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
     int count = 0;
     *clientPtr << "select user_name, user_id, id from users where 1 = 1"
                << Mode::Blocking >>
-        [&count](bool isNull,
-                 const std::string &name,
-                 std::string &&user_id,
-                 int id) {
+        [&count](bool isNull, const std::string &, std::string &&, int) {
             if (!isNull)
                 ++count;
             else
@@ -241,7 +238,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
         };
     /// 1.10 clean up
     *clientPtr << "truncate table users restart identity" >>
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true,
                        "postgresql - DbClient streaming-type interface(9)");
         } >>
@@ -362,7 +359,7 @@ void doPostgreTest(const drogon::orm::DbClientPtr &clientPtr)
     /// 2.6 clean up
     clientPtr->execSqlAsync(
         "truncate table users restart identity",
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "postgresql - DbClient asynchronous interface(7)");
         },
         [](const DrogonDbException &e) {
@@ -827,21 +824,21 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
 {
     // Prepare the test environment
     *clientPtr << "CREATE DATABASE IF NOT EXISTS drogonTestMysql" >>
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "mysql - Prepare the test environment(0)");
         } >>
         [](const DrogonDbException &e) {
             std::cerr << e.base().what() << std::endl;
             testOutput(false, "mysql - Prepare the test environment(0)");
         };
-    *clientPtr << "USE drogonTestMysql" >> [](const Result &r) {
+    *clientPtr << "USE drogonTestMysql" >> [](const Result &) {
         testOutput(true, "mysql - Prepare the test environment(0)");
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
         testOutput(false, "mysql - Prepare the test environment(0)");
     };
     // mysql is case sensitive
-    *clientPtr << "DROP TABLE IF EXISTS users" >> [](const Result &r) {
+    *clientPtr << "DROP TABLE IF EXISTS users" >> [](const Result &) {
         testOutput(true, "mysql - Prepare the test environment(1)");
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
@@ -860,7 +857,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
             admin boolean DEFAULT false,\
             CONSTRAINT user_id_org UNIQUE(user_id, org_name)\
         )" >>
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "mysql - Prepare the test environment(2)");
         } >>
         [](const DrogonDbException &e) {
@@ -923,10 +920,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     int count = 0;
     *clientPtr << "select user_name, user_id, id from users where 1 = 1"
                << Mode::Blocking >>
-        [&count](bool isNull,
-                 const std::string &name,
-                 std::string &&user_id,
-                 int id) {
+        [&count](bool isNull, const std::string &, std::string &&, int) {
             if (!isNull)
                 ++count;
             else
@@ -989,7 +983,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(false, "mysql - DbClient streaming-type interface(8)");
         };
     /// 1.10 truncate
-    *clientPtr << "truncate table users" >> [](const Result &r) {
+    *clientPtr << "truncate table users" >> [](const Result &) {
         testOutput(true, "mysql - DbClient streaming-type interface(9)");
     } >> [](const DrogonDbException &e) {
         std::cerr << "error:" << e.base().what() << std::endl;
@@ -1099,7 +1093,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
     /// 2.6 truncate
     clientPtr->execSqlAsync(
         "truncate table users",
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "mysql - DbClient asynchronous interface(7)");
         },
         [](const DrogonDbException &e) {
@@ -1479,7 +1473,7 @@ void doMysqlTest(const drogon::orm::DbClientPtr &clientPtr)
 void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
 {
     // Prepare the test environment
-    *clientPtr << "DROP TABLE IF EXISTS users" >> [](const Result &r) {
+    *clientPtr << "DROP TABLE IF EXISTS users" >> [](const Result &) {
         testOutput(true, "sqlite3 - Prepare the test environment(0)");
     } >> [](const DrogonDbException &e) {
         std::cerr << e.base().what() << std::endl;
@@ -1498,7 +1492,7 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
             admin boolean DEFAULT false,\
             CONSTRAINT user_id_org UNIQUE(user_id, org_name)\
         )" >>
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "sqlite3 - Prepare the test environment(1)");
         } >>
         [](const DrogonDbException &e) {
@@ -1560,10 +1554,7 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
     int count = 0;
     *clientPtr << "select user_name, user_id, id from users where 1 = 1"
                << Mode::Blocking >>
-        [&count](bool isNull,
-                 const std::string &name,
-                 std::string &&user_id,
-                 int id) {
+        [&count](bool isNull, const std::string &, std::string &&, int) {
             if (!isNull)
                 ++count;
             else
@@ -1626,13 +1617,13 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
             testOutput(false, "sqlite3 - DbClient streaming-type interface(8)");
         };
     /// 1.10 clean up
-    *clientPtr << "delete from users" >> [](const Result &r) {
+    *clientPtr << "delete from users" >> [](const Result &) {
         testOutput(true, "sqlite3 - DbClient streaming-type interface(9.1)");
     } >> [](const DrogonDbException &e) {
         std::cerr << "error:" << e.base().what() << std::endl;
         testOutput(false, "sqlite3 - DbClient streaming-type interface(9.1)");
     };
-    *clientPtr << "UPDATE sqlite_sequence SET seq = 0" >> [](const Result &r) {
+    *clientPtr << "UPDATE sqlite_sequence SET seq = 0" >> [](const Result &) {
         testOutput(true, "sqlite3 - DbClient streaming-type interface(9.2)");
     } >> [](const DrogonDbException &e) {
         std::cerr << "error:" << e.base().what() << std::endl;
@@ -1741,7 +1732,7 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
     /// 2.6 clean up
     clientPtr->execSqlAsync(
         "delete from users",
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "sqlite3 - DbClient asynchronous interface(7.1)");
         },
         [](const DrogonDbException &e) {
@@ -1750,7 +1741,7 @@ void doSqliteTest(const drogon::orm::DbClientPtr &clientPtr)
         });
     clientPtr->execSqlAsync(
         "UPDATE sqlite_sequence SET seq = 0",
-        [](const Result &r) {
+        [](const Result &) {
             testOutput(true, "sqlite3 - DbClient asynchronous interface(7.2)");
         },
         [](const DrogonDbException &e) {

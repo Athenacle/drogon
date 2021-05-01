@@ -36,7 +36,7 @@ int main()
      INVITING_USER_ID INTEGER,\
      AVATAR_ID TEXT, uuu double, text VARCHAR(255),avatar blob,is_default bool)"
             << Mode::Blocking >>
-        [](const Result &r) { LOG_DEBUG << "created"; } >>
+        [](const Result &) { LOG_DEBUG << "created"; } >>
         [](const DrogonDbException &e) {
             std::cout << e.base().what() << std::endl;
         };

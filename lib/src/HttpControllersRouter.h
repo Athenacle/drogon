@@ -66,7 +66,7 @@ class HttpControllersRouter : public trantor::NonCopyable
           postHandlingAdvices_(postHandlingAdvices)
     {
     }
-    void init(const std::vector<trantor::EventLoop *> &ioLoops);
+    void init(const std::vector<trantor::EventLoop *> &);
     void addHttpPath(const std::string &path,
                      const internal::HttpBinderBasePtr &binder,
                      const std::vector<HttpMethod> &validMethods,

@@ -3,7 +3,7 @@
 #include <atomic>
 
 void PipeliningTest::asyncHandleHttpRequest(
-    const HttpRequestPtr &req,
+    const HttpRequestPtr &,
     const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {

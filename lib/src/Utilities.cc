@@ -113,7 +113,7 @@ class Base64CharMap
             index++;
         charMap_[static_cast<int>('/')] = charMap_[static_cast<int>('_')] =
             index;
-        charMap_[0] = 0xff;
+        charMap_[0] = static_cast<char>(0xff);
     }
     char getIndex(const char c) const noexcept
     {
@@ -355,7 +355,7 @@ std::string getUuid()
 #endif
 #if _BYTE_ORDER == _LITTLE_ENDIAN
     uuid_enc_le(binstr, uuid);
-#else /* _BYTE_ORDER != _LITTLE_ENDIAN */
+#else  /* _BYTE_ORDER != _LITTLE_ENDIAN */
     uuid_enc_be(binstr, uuid);
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
     delete uuid;
@@ -830,7 +830,8 @@ std::string urlDecode(const char *begin, const char *end)
 /* Compress gzip data */
 std::string gzipCompress(const char *data, const size_t ndata)
 {
-    z_stream strm = {0};
+    z_stream strm;
+    memset(&strm, 0, sizeof(strm));
     if (data && ndata > 0)
     {
         if (deflateInit2(&strm,
@@ -884,7 +885,8 @@ std::string gzipDecompress(const char *data, const size_t ndata)
     auto decompressed = std::string(full_length * 2, 0);
     bool done = false;
 
-    z_stream strm = {0};
+    z_stream strm;
+    memset(&strm, 0, sizeof(strm));
     strm.next_in = (Bytef *)data;
     strm.avail_in = static_cast<uInt>(ndata);
     strm.total_out = 0;

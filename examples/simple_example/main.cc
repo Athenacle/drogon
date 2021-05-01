@@ -13,7 +13,7 @@ using namespace std::chrono_literals;
 class A : public DrObjectBase
 {
   public:
-    void handle(const HttpRequestPtr &req,
+    void handle(const HttpRequestPtr &,
                 const HttpOperation &op,
                 std::function<void(const HttpResponsePtr &)> &&callback,
                 int p1,
@@ -34,7 +34,7 @@ class A : public DrObjectBase
         callback(res);
     }
     static void staticHandle(
-        const HttpRequestPtr &req,
+        const HttpRequestPtr &,
         const HttpOperation &op,
         std::function<void(const HttpResponsePtr &)> &&callback,
         int p1,
@@ -58,7 +58,7 @@ class A : public DrObjectBase
 class B : public DrObjectBase
 {
   public:
-    void operator()(const HttpRequestPtr &req,
+    void operator()(const HttpRequestPtr &,
                     const HttpOperation &op,
                     std::function<void(const HttpResponsePtr &)> &&callback,
                     int p1,
@@ -81,7 +81,7 @@ class C : public drogon::HttpController<C>
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(C::priv, "/priv/resource", Get, "DigestAuthFilter");
     METHOD_LIST_END
-    void priv(const HttpRequestPtr &req,
+    void priv(const HttpRequestPtr &,
               const HttpOperation &op,
               std::function<void(const HttpResponsePtr &)> &&callback) const
     {
@@ -106,7 +106,7 @@ class Test : public HttpController<Test>
                "/{2}/info",
                Get);  // path is /api/v1/test/{arg2}/info
     METHOD_LIST_END
-    void get(const HttpRequestPtr &req,
+    void get(const HttpRequestPtr &,
              const HttpOperation &op,
              std::function<void(const HttpResponsePtr &)> &&callback,
              int p1,
@@ -121,7 +121,7 @@ class Test : public HttpController<Test>
         auto res = op.newHttpViewResponse("ListParaView", data);
         callback(res);
     }
-    void list(const HttpRequestPtr &req,
+    void list(const HttpRequestPtr &,
               const HttpOperation &op,
               std::function<void(const HttpResponsePtr &)> &&callback,
               int p1,
@@ -174,7 +174,7 @@ int main()
     // Lambda example
     app->registerHandler(
         "/api/v1/handle2/{int a}/{float b}",
-        [](const HttpRequestPtr &req,
+        [](const HttpRequestPtr &,
            const HttpOperation &op,
            std::function<void(const HttpResponsePtr &)> &&callback,
            int a,    // here the `a` parameter is converted from the number 1
@@ -216,13 +216,12 @@ int main()
 
     app->registerHandler("/api/v1/handle4/{4:p4}/{3:p3}/{1:p1}", func);
 
-    app->registerHandler(
-        "/api/v1/this_will_fail",
-        [](const HttpRequestPtr &req,
-           const HttpOperation &,
-           std::function<void(const HttpResponsePtr &)> &&callback) {
-            throw std::runtime_error("this should fail");
-        });
+    app->registerHandler("/api/v1/this_will_fail",
+                         [](const HttpRequestPtr &,
+                            const HttpOperation &,
+                            std::function<void(const HttpResponsePtr &)> &&) {
+                             throw std::runtime_error("this should fail");
+                         });
 
     app->setDocumentRoot("./");
     app->enableSession(60);
@@ -280,14 +279,14 @@ int main()
                   << local.toIpPort();
         return true;
     });
-    app->registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
-                                     drogon::AdviceCallback &&acb,
+    app->registerPreRoutingAdvice([](const drogon::HttpRequestPtr &,
+                                     drogon::AdviceCallback &&,
                                      drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "preRouting1";
         accb();
     });
     app->registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req,
-                                      drogon::AdviceCallback &&acb,
+                                      drogon::AdviceCallback &&,
                                       drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "postRouting1";
         LOG_DEBUG << "Matched path=" << req->matchedPathPatternData();
@@ -297,8 +296,8 @@ int main()
         }
         accb();
     });
-    app->registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req,
-                                      drogon::AdviceCallback &&acb,
+    app->registerPreHandlingAdvice([](const drogon::HttpRequestPtr &,
+                                      drogon::AdviceCallback &&,
                                       drogon::AdviceChainCallback &&accb) {
         LOG_DEBUG << "preHandling1";
         accb();
@@ -308,13 +307,13 @@ int main()
         LOG_DEBUG << "postHandling1";
         resp->addHeader("Access-Control-Allow-Origin", "*");
     });
-    app->registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req) {
+    app->registerPreRoutingAdvice([](const drogon::HttpRequestPtr &) {
         LOG_DEBUG << "preRouting observer";
     });
-    app->registerPostRoutingAdvice([](const drogon::HttpRequestPtr &req) {
+    app->registerPostRoutingAdvice([](const drogon::HttpRequestPtr &) {
         LOG_DEBUG << "postRouting observer";
     });
-    app->registerPreHandlingAdvice([](const drogon::HttpRequestPtr &req) {
+    app->registerPreHandlingAdvice([](const drogon::HttpRequestPtr &) {
         LOG_DEBUG << "preHanding observer";
     });
     app->registerSyncAdvice(

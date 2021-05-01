@@ -1,0 +1,61 @@
+
+#ifndef CONFIG_H_
+#define CONFIG_H_
+
+#cmakedefine UNIX_HAVE_GETOPTLONG
+
+#cmakedefine UNIX_HAVE_PTHREAD_SPINLOCK
+
+#cmakedefine UNIX_HAVE_PTHREAD_COND
+
+#cmakedefine HAVE_PTHREAD_H
+
+#cmakedefine UNIX_HAVE_PTHREAD_MUTEX
+
+#cmakedefine UNIX_HAVE_DLOPEN
+
+#cmakedefine HAVE_BZERO
+
+#cmakedefine HAVE_BUILTIN_EXPECT
+
+#cmakedefine UNIX
+
+#cmakedefine HAVE_CLOCK_REALTIME_COARSE
+
+#cmakedefine UNIX_HAVE_NANOSLEEP
+
+#cmakedefine ON_64BITS
+
+#cmakedefine UNIX_HAVE_GET_NPROCS
+
+#cmakedefine UNIX_HAVE_SETENV
+
+// clang-format off
+
+#define PROJECT_GIT_SHA "@GIT_HASH@"
+
+#define PROJECT_NAME "@PROJECT_NAME@"
+
+// clang-format on
+
+#ifdef HAVE_BUILTIN_EXPECT
+#define likely(x) (__builtin_expect(!!(x), 1))
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+#else
+#define likely(x) ((x))
+#define unlikely(x) ((x))
+#endif
+
+#if __cplusplus >= 200809L && __has_cpp_attribute(noreturn)
+#define NORETURN [[noreturn]]
+#else
+#define NORETURN
+#endif
+
+#if __cplusplus >= 201603L && __has_cpp_attribute(maybe_unused)
+#define MAYBE_UNUSED [[maybe_unused]]
+#else
+#define MAYBE_UNUSED
+#endif
+
+#endif

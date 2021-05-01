@@ -12,7 +12,6 @@ int main()
     trantor::Logger::setLogLevel(trantor::Logger::kTrace);
     auto &op = app->getOperations();
     {
-        int count = 0;
         auto client = op.newHttpClient("http://www.baidu.com");
         auto req = op.newHttpRequest();
         req->setMethod(drogon::Get);
@@ -23,7 +22,7 @@ int main()
         for (int i = 0; i < 10; ++i)
         {
             client->sendRequest(
-                req, [](ReqResult result, const HttpResponsePtr &response) {
+                req, [](ReqResult, const HttpResponsePtr &response) {
                     std::cout << "receive response!" << std::endl;
                     // auto headers=response.
                     ++nth_resp;

@@ -8,7 +8,7 @@
 
 using namespace drogon;
 
-void DoNothingPlugin::initAndStart(const Json::Value &config)
+void DoNothingPlugin::initAndStart(const Json::Value &)
 {
     /// Initialize and start the plugin
 }

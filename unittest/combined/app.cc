@@ -17,7 +17,7 @@ class C : public drogon::HttpController<C>
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(C::root, "/");
     METHOD_LIST_END
-    void root(const HttpRequestPtr &req,
+    void root(const HttpRequestPtr &,
               const HttpOperation &op,
               std::function<void(const HttpResponsePtr &)> &&callback) const
     {
@@ -80,10 +80,9 @@ void HttpApp::TearDown()
 
 HttpRequestPtr mkRequest(const HttpOperation &op,
                          HttpMethod mtd,
-                         const std::string &host,
                          const std::string &url,
                          const KVPairTable &query,
-                         const KVPairTable &header)
+                         MAYBE_UNUSED const KVPairTable &header)
 {
     auto req = op.newHttpRequest();
     req->setMethod(mtd);
@@ -95,15 +94,16 @@ HttpRequestPtr mkRequest(const HttpOperation &op,
     return req;
 }
 
-HttpApp::ForwardReturnType HttpApp::forward(HttpMethod mtd,
-                                            const std::string &host,
-                                            const std::string &url,
-                                            const KVPairTable &query,
-                                            const KVPairTable &header)
+HttpApp::ForwardReturnType HttpApp::forward(
+    HttpMethod mtd,
+    MAYBE_UNUSED const std::string &host,
+    const std::string &url,
+    const KVPairTable &query,
+    const KVPairTable &header)
 {
     auto &op = app->getOperations();
     auto client = op.newHttpClient("127.0.0.1", port);
-    auto req = mkRequest(app->getOperations(), mtd, host, url, query, header);
+    auto req = mkRequest(app->getOperations(), mtd, url, query, header);
 
     return client->sendRequest(req);
 }
@@ -111,8 +111,8 @@ HttpApp::ForwardReturnType HttpApp::forward(HttpMethod mtd,
 HttpApp::ForwardReturnType HttpApp::forward(HttpMethod mtd,
                                             const std::string &host,
                                             const std::string &url,
-                                            const DataBlob &blob,
-                                            ContentType type,
+                                            MAYBE_UNUSED const DataBlob &blob,
+                                            MAYBE_UNUSED ContentType type,
                                             const KVPairTable &query,
                                             const KVPairTable &header)
 {
@@ -144,7 +144,7 @@ std::string generatorRandom(const std::string &prefix, size_t len)
 
     tmp_s.reserve(len + prefix.length() + 1);
 
-    for (int i = 0; i < len; ++i)
+    for (size_t i = 0; i < len; ++i)
         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
 
     return tmp_s;

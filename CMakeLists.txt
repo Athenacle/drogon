@@ -21,6 +21,9 @@ option(BUILD_ORM "Build orm" ON)
 option(COZ_PROFILING "Use coz for profiling" OFF)
 option(BUILD_DROGON_SHARED "Build drogon as a shared lib" OFF)
 
+configure_file(${CMAKE_SOURCE_DIR}/cmake_modules/drogon_config.h.in ${CMAKE_BINARY_DIR}/drogon_config.h @ONLY)
+add_compile_definitions(CONFIG_H)
+
 include(CMakeDependentOption)
 CMAKE_DEPENDENT_OPTION(BUILD_POSTGRESQL "Build with postgresql support" ON "BUILD_ORM" OFF)
 CMAKE_DEPENDENT_OPTION(LIBPQ_BATCH_MODE "Use batch mode for libpq" ON "BUILD_POSTGRESQL" OFF)

@@ -304,7 +304,7 @@ HttpSimpleControllersRouter::getHandlersInfo() const
 }
 
 void HttpSimpleControllersRouter::init(
-    const std::vector<trantor::EventLoop *> &ioLoops)
+    const std::vector<trantor::EventLoop *> &)
 {
     for (auto &iter : simpleCtrlMap_)
     {

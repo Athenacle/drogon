@@ -182,6 +182,7 @@ void create_model::createModelClassFromPG(
                 info.notNull_ = isNullAble == "YES" ? false : true;
                 auto type = row["data_type"].as<std::string>();
                 info.colDatabaseType_ = type;
+
                 if (type == "smallint")
                 {
                     info.colType_ = "short";
@@ -231,14 +232,11 @@ void create_model::createModelClassFromPG(
                 {
                     info.colType_ = "std::vector<char>";
                 }
-                else if (type.find("numeric") != std::string::npos)
-                {
-                    info.colType_ = "std::string";
-                }
                 else
                 {
                     info.colType_ = "std::string";
                 }
+
                 auto defaultVal = row["column_default"].as<std::string>();
                 if (!defaultVal.empty())
                 {
@@ -271,7 +269,7 @@ void create_model::createModelClassFromPG(
                 AND pg_constraint.contype = 'p'"
             << tableName << Mode::Blocking >>
         [&](bool isNull,
-            const std::string &pkName,
+            const std::string &,
             const std::vector<std::shared_ptr<short>> &pk) {
             if (!isNull)
             {
@@ -296,9 +294,7 @@ void create_model::createModelClassFromPG(
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $1 and pg_constraint.contype='p'"
                 << tableName << Mode::Blocking >>
-            [&](bool isNull,
-                const std::string &colName,
-                const std::string &type) {
+            [&](bool isNull, const std::string &colName, const std::string &) {
                 if (isNull)
                     return;
 
@@ -333,7 +329,7 @@ void create_model::createModelClassFromPG(
                 INNER JOIN pg_type ON pg_type.oid = pg_attribute.atttypid \
                 WHERE pg_class.relname = $2 and pg_constraint.contype='p'"
                     << (int)i << tableName << Mode::Blocking >>
-                [&](bool isNull, std::string colName, const std::string &type) {
+                [&](bool isNull, std::string colName, const std::string &) {
                     if (isNull)
                         return;
                     pkNames.push_back(colName);
@@ -385,10 +381,7 @@ void create_model::createModelFromPG(
                "nspname = $1) "
                "AND a.relkind = 'r' ORDER BY a.relname"
             << schema << Mode::Blocking >>
-        [&](bool isNull,
-            size_t oid,
-            std::string &&tableName,
-            const std::string &comment) {
+        [&](bool isNull, size_t, std::string &&tableName, const std::string &) {
             if (!isNull)
             {
                 std::cout << "table name:" << tableName << std::endl;
@@ -645,7 +638,7 @@ void create_model::createModelClassFromSqlite3(
                                 }
                             }
                         } >>
-                        [](const DrogonDbException &e) {
+                        [](const DrogonDbException &) {
 
                         };
                 }

@@ -184,12 +184,14 @@ HttpOperation::HttpOperation(
         &wsClientIPPort,
     const std::function<WebSocketClientPtr(const std::string &, EvLoop *, bool)>
         &wsClientString)
-    : http_(http),
-      notFound_(notfound),
+    :
+
       json_(json),
       jsonLV_(jsonLv),
-      httpView_(httpView),
       redirect_(redirection),
+      http_(http),
+      notFound_(notfound),
+      httpView_(httpView),
       file_(file),
       httpRequest_(httpReq),
       newClientIPPort_(clientIPPort),

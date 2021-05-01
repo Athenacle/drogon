@@ -3,13 +3,11 @@
 
 using namespace api;
 // add definition of your processing function here
-void Attachment::get(const HttpRequestPtr &req,
+void Attachment::get(const HttpRequestPtr &,
                      const HttpOperation &op,
                      std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto resp = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                  "FileUpload",
-                                                  HttpViewData());
+    auto resp = op.newHttpViewResponse("FileUpload", HttpViewData());
     callback(resp);
 }
 
@@ -42,7 +40,7 @@ void Attachment::upload(const HttpRequestPtr &req,
         {
             json[param.first] = param.second;
         }
-        auto resp = HttpResponse::newHttpJsonResponse(req->getApp(), json);
+        auto resp = op.newHttpJsonResponse(json);
         callback(resp);
         return;
     }
@@ -55,11 +53,10 @@ void Attachment::upload(const HttpRequestPtr &req,
 }
 
 void Attachment::download(
-    const HttpRequestPtr &req,
+    const HttpRequestPtr &,
     const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    auto resp = HttpResponse::newFileResponse(
-        req->getApp(), req, "./drogon.jpg", "", CT_IMAGE_JPG);
+    auto resp = op.newFileResponse("./drogon.jpg", "", CT_IMAGE_JPG);
     callback(resp);
 }

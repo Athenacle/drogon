@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     }
     wsPtr->setMessageHandler(
         [continually, app](const std::string &message,
-                           const WebSocketClientPtr &wsPtr,
+                           const WebSocketClientPtr &,
                            const WebSocketMessageType &type) {
             std::cout << "new message:" << message << std::endl;
             if (type == WebSocketMessageType::Pong)
@@ -40,12 +40,12 @@ int main(int argc, char *argv[])
                 }
             }
         });
-    wsPtr->setConnectionClosedHandler([](const WebSocketClientPtr &wsPtr) {
+    wsPtr->setConnectionClosedHandler([](const WebSocketClientPtr &) {
         std::cout << "ws closed!" << std::endl;
     });
     wsPtr->connectToServer(req,
                            [continually](ReqResult r,
-                                         const HttpResponsePtr &resp,
+                                         const HttpResponsePtr &,
                                          const WebSocketClientPtr &wsPtr) {
                                if (r == ReqResult::Ok)
                                {

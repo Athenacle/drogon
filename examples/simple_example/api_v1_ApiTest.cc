@@ -1,7 +1,7 @@
 ﻿#include "api_v1_ApiTest.h"
 using namespace api::v1;
 // add definition of your processing function here
-void ApiTest::rootGet(const HttpRequestPtr &req,
+void ApiTest::rootGet(const HttpRequestPtr &,
                       const HttpOperation &op,
                       std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -20,7 +20,7 @@ void ApiTest::rootPost(const HttpRequestPtr &req,
         callback(res);
     }).detach();
 }
-void ApiTest::get(const HttpRequestPtr &req,
+void ApiTest::get(const HttpRequestPtr &,
                   const HttpOperation &op,
                   std::function<void(const HttpResponsePtr &)> &&callback,
                   int p1,
@@ -32,15 +32,13 @@ void ApiTest::get(const HttpRequestPtr &req,
     para["p1"] = std::to_string(p1);
     para["p2"] = p2;
     data.insert("parameters", para);
-    auto res = HttpResponse::newHttpViewResponse(req->getApp(),
-                                                 "ListParaView.csp",
-                                                 data);
+    auto res = op.newHttpViewResponse("ListParaView.csp", data);
     callback(res);
 }
 
 void ApiTest::your_method_name(
     const HttpRequestPtr &req,
-    const HttpOperation &op,
+    const HttpOperation &,
     std::function<void(const HttpResponsePtr &)> &&callback,
     double p1,
     int p2) const
@@ -59,7 +57,7 @@ void ApiTest::your_method_name(
         HttpResponse::newHttpViewResponse(req->getApp(), "ListParaView", data);
     callback(res);
 }
-void ApiTest::staticApi(const HttpRequestPtr &req,
+void ApiTest::staticApi(const HttpRequestPtr &,
                         const HttpOperation &op,
                         std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -69,10 +67,10 @@ void ApiTest::staticApi(const HttpRequestPtr &req,
     callback(resp);
 }
 
-void ApiTest::get2(const HttpRequestPtr &req,
+void ApiTest::get2(const HttpRequestPtr &,
                    const HttpOperation &op,
                    std::function<void(const HttpResponsePtr &)> &&callback,
-                   std::string &&p1)
+                   std::string &&)
 {
     // test gzip feature
     auto res = op.newHttpResponse();
@@ -456,7 +454,7 @@ void ApiTest::attributesTest(
     return;
 }
 
-void ApiTest::regexTest(const HttpRequestPtr &req,
+void ApiTest::regexTest(const HttpRequestPtr &,
                         const HttpOperation &op,
                         std::function<void(const HttpResponsePtr &)> &&callback,
                         int p1,

@@ -1,7 +1,7 @@
 #include "ForwardCtrl.h"
 void ForwardCtrl::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
-    const HttpOperation &op,
+    const HttpOperation &,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
     req->setPath("/repos/an-tao/drogon/git/refs/heads/master");

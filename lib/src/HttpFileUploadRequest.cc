@@ -19,7 +19,8 @@
 using namespace drogon;
 
 HttpFileUploadRequest::HttpFileUploadRequest(
-    const std::vector<UploadFile> &files)
+    HttpAppFrameworkImpl* app_,
+    const std::vector<UploadFile>& files)
     : HttpRequestImpl(app_, nullptr),
       boundary_(utils::genRandomString(32)),
       files_(files)

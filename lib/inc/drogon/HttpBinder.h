@@ -173,7 +173,7 @@ class HttpBinder : public HttpBinderBase
 
     template <typename T>
     typename std::enable_if<!(CanConvertFromStringStream<T>::value), void>::type
-    getHandlerArgumentValue(T &value, std::string &&p)
+    getHandlerArgumentValue(T &, std::string &&)
     {
     }
 

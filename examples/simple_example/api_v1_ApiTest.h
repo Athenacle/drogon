@@ -81,7 +81,7 @@ class ApiTest : public drogon::HttpController<ApiTest>
                    std::string &&p2);
     void shutdown(const HttpRequestPtr &req,
                   const HttpOperation &,
-                  std::function<void(const HttpResponsePtr &)> &&callback)
+                  std::function<void(const HttpResponsePtr &)> &&)
     {
         reinterpret_cast<HttpAppFramework *>(req->getApp())->quit();
     }

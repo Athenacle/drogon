@@ -1,7 +1,7 @@
 #include "CustomCtrl.h"
 // add definition of your processing function here
 
-void CustomCtrl::hello(const HttpRequestPtr &req,
+void CustomCtrl::hello(const HttpRequestPtr &,
                        const HttpOperation &op,
                        std::function<void(const HttpResponsePtr &)> &&callback,
                        const std::string &userName) const

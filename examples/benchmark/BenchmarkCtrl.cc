@@ -1,6 +1,6 @@
 #include "BenchmarkCtrl.h"
 void BenchmarkCtrl::asyncHandleHttpRequest(
-    const HttpRequestPtr &req,
+    const HttpRequestPtr &,
     const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {

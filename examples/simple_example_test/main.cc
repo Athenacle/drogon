@@ -29,9 +29,9 @@
 #include <sys/stat.h>
 
 #define RESET "\033[0m"
-#define RED "\033[31m"   /* Red */
-#define GREEN "\033[32m" /* Green */
-#define YELLOW "\e[33m"  /* Yellow */
+#define RED "\033[31m"    /* Red */
+#define GREEN "\033[32m"  /* Green */
+#define YELLOW "\033[33m" /* Yellow */
 
 #define JPG_LEN 44618
 size_t indexLen;
@@ -91,7 +91,7 @@ const std::string &dispatchReqResult(const ReqResult &r)
 void outputBad(const HttpRequestPtr &req,
                bool isHttps,
                const ReqResult &result,
-               const HttpResponsePtr &resp)
+               const HttpResponsePtr &)
 {
     static std::mutex mtx;
     {
@@ -148,8 +148,7 @@ void doTest(const HttpClientPtr &client,
     req->setPath("/slow");
     client->sendRequest(
         req,
-        [req, isHttps, client, app](ReqResult result,
-                                    const HttpResponsePtr &resp) {
+        [req, isHttps, client, app](ReqResult result, const HttpResponsePtr &) {
             if (result == ReqResult::Ok)
             {
                 outputGood(req, isHttps);

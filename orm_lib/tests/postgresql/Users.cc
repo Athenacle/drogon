@@ -755,7 +755,7 @@ void Users::setAdminToNull() noexcept
     dirtyFlag_[8] = true;
 }
 
-void Users::updateId(const uint64_t id)
+void Users::updateId(const uint64_t)
 {
 }
 

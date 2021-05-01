@@ -1,6 +1,6 @@
 #include "TestViewCtl.h"
 void TestViewCtl::asyncHandleHttpRequest(
-    const HttpRequestPtr &req,
+    const HttpRequestPtr &,
     const HttpOperation &op,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {

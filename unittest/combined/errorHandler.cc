@@ -67,7 +67,7 @@ TEST_F(HttpApp, custom404Cached)
     start();
 
     int times = 10;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < times; i++)
     {
         const auto& [st, resp] = forward(Get, "", generatorRandom("/", 10));
         EXPECT_EQ(st, ReqResult::Ok);

@@ -172,7 +172,7 @@ HttpResponsePtr HttpResponse::newNotFoundResponse(HttpAppFrameworkImpl *app,
                 static IOThreadStorage<HttpResponsePtr> thread404Pages(app);
                 std::call_once(threadOnce, [app] {
                     thread404Pages.init(
-                        [app](drogon::HttpResponsePtr &resp, size_t index) {
+                        [app](drogon::HttpResponsePtr &resp, size_t) {
                             resp = build404Response(app, nullptr);
                         });
                 });
@@ -228,7 +228,7 @@ HttpResponsePtr HttpResponse::newHttpViewResponse(HttpAppFrameworkImpl *app,
 
 HttpResponsePtr HttpResponse::newFileResponse(
     HttpAppFrameworkImpl *app,
-    const HttpRequestPtr &ptr,
+    const HttpRequestPtr &,
     const unsigned char *pBuffer,
     size_t bufferLength,
     const std::string &attachmentFileName,

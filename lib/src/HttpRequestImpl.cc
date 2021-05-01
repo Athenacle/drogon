@@ -507,8 +507,7 @@ HttpRequestPtr HttpRequest::newFileUploadRequest(
     HttpAppFrameworkImpl *app,
     const std::vector<UploadFile> &files)
 {
-    auto ret = std::make_shared<HttpFileUploadRequest>(files);
-    ret->app_ = app;
+    auto ret = std::make_shared<HttpFileUploadRequest>(app, files);
     return ret;
 }
 

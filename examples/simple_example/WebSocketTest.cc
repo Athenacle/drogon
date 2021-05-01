@@ -37,7 +37,7 @@ void WebSocketTest::handleNewConnection(const HttpRequestPtr &req,
     Subscriber s;
     s.chatRoomName_ = req->getParameter("room_name");
     s.id_ = chatRooms_.subscribe(s.chatRoomName_,
-                                 [conn](const std::string &topic,
+                                 [conn](const std::string &,
                                         const std::string &message) {
                                      conn->send(message);
                                  });

@@ -24,6 +24,26 @@
 #include <thread>
 #include <unordered_set>
 
+#ifdef CONFIG_H
+#include "drogon_config.h"
+#endif
+
+#ifndef MAYBE_UNUSED
+#define MAYBE_UNUSED
+#endif
+
+#ifndef NORETURN
+#define NORETURN
+#endif
+
+#ifndef likely
+#define likely(expr) (((expr)))
+#endif
+
+#ifndef unlikely
+#define unlikely(expr) (((expr)))
+#endif
+
 namespace drogon
 {
 namespace orm

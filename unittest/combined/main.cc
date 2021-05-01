@@ -7,14 +7,16 @@
 
 #include <fmt/chrono.h>
 
-#define RED "\e[31m"
-#define FATAL "\e[1m" RED
-#define GREEN "\e[32m"
-#define YELLOW "\e[33m"
-#define BLUE "\e[34m"
-#define MAGENTA "\e[35m"
+#define RED "\033[31m"
+#define FATAL "\033[1m" RED
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define DIM " \033[2m"
+#define LG "\033[37m"
 
-#define RESET "\e[0m"
+#define RESET "\033[0m"
 
 namespace
 {
@@ -51,8 +53,6 @@ void increaseLogIndent()
 
 void setLogName()
 {
-#define DIM " \e[2m"
-#define LG "\e[37m"
     std::string name;
     getMyTestName(name);
     setLogName(fmt::format("{}{}{}", DIM LG, name, RESET));

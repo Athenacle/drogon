@@ -53,8 +53,8 @@ class RedisException final : public std::exception
     RedisException() = delete;
 
   private:
-    std::string message_;
     RedisErrorCode code_{RedisErrorCode::kNone};
+    std::string message_;
 };
 using RedisExceptionCallback = std::function<void(const RedisException &)>;
 }  // namespace nosql

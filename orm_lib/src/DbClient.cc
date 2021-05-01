@@ -41,8 +41,9 @@ std::shared_ptr<DbClient> DbClient::newPgClient(const std::string &connInfo,
 #endif
 }
 
-std::shared_ptr<DbClient> DbClient::newMysqlClient(const std::string &connInfo,
-                                                   const size_t connNum)
+std::shared_ptr<DbClient> DbClient::newMysqlClient(
+    MAYBE_UNUSED const std::string &connInfo,
+    MAYBE_UNUSED const size_t connNum)
 {
 #if USE_MYSQL
     return std::make_shared<DbClientImpl>(connInfo, connNum, ClientType::Mysql);

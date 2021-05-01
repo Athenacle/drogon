@@ -120,7 +120,7 @@ class HttpOperation
                                 EvLoop *loop = nullptr,
                                 bool useOldTLS = false) const
     {
-        return newClientIPPort_(ip, port, useSSL, loop, false);
+        return newClientIPPort_(ip, port, useSSL, loop, useOldTLS);
     }
 
     HttpResponsePtr newFileResponse(const std::string &fullPath,

@@ -25,6 +25,27 @@
 #endif
 using namespace drogon::orm;
 using namespace drogon::orm::internal;
+
+#ifdef CONFIG_H
+#include "drogon_config.h"
+#endif
+
+#ifndef MAYBE_UNUSED
+#define MAYBE_UNUSED
+#endif
+
+#ifndef NORETURN
+#define NORETURN
+#endif
+
+#ifndef likely
+#define likely(expr) (((expr)))
+#endif
+
+#ifndef unlikely
+#define unlikely(expr) (((expr)))
+#endif
+
 void SqlBinder::exec()
 {
     execed_ = true;
@@ -303,7 +324,7 @@ SqlBinder &SqlBinder::operator<<(DefaultValue dv)
     return *this;
 }
 
-int SqlBinder::getMysqlTypeBySize(size_t size)
+int SqlBinder::getMysqlTypeBySize(MAYBE_UNUSED size_t size)
 {
 #if USE_MYSQL
     switch (size)

@@ -41,8 +41,7 @@ void HttpControllersRouter::doWhenNoHandlerFound(
     fileRouter_.route(req, std::move(callback));
 }
 
-void HttpControllersRouter::init(
-    const std::vector<trantor::EventLoop *> &ioLoops)
+void HttpControllersRouter::init(const std::vector<trantor::EventLoop *> &)
 {
     for (auto &router : ctrlVector_)
     {
@@ -539,7 +538,7 @@ void HttpControllersRouter::route(
 
 void HttpControllersRouter::doControllerHandler(
     const CtrlBinderPtr &ctrlBinderPtr,
-    const HttpControllerRouterItem &routerItem,
+    MAYBE_UNUSED const HttpControllerRouterItem &routerItem,
     const HttpRequestImplPtr &req,
     const std::smatch &matchResult,
     std::function<void(const HttpResponsePtr &)> &&callback)
