@@ -95,7 +95,7 @@ HttpAppFrameworkImpl::HttpAppFrameworkImpl()
       redisClientManagerPtr_(new nosql::RedisClientManager),
       uploadPath_(rootPath_ + "uploads")
 {
-    // op_ = HttpOperation::createInstance(this);
+    loop_ = new trantor::EventLoop;
 }
 
 static std::function<void()> f = [] {
@@ -202,6 +202,7 @@ HttpAppFrameworkImpl::~HttpAppFrameworkImpl() noexcept
     sessionManagerPtr_.reset();
 
     delete op_;
+    delete loop_;
 }
 HttpAppFramework &HttpAppFrameworkImpl::setStaticFilesCacheTime(int cacheTime)
 {
@@ -857,12 +858,6 @@ void HttpAppFrameworkImpl::onAsyncRequest(
                 httpSimpleCtrlsRouterPtr_->route(req, std::move(*callbackPtr));
             });
     }
-}
-
-trantor::EventLoop *HttpAppFrameworkImpl::getLoop() const
-{
-    static trantor::EventLoop loop;
-    return &loop;
 }
 
 trantor::EventLoop *HttpAppFrameworkImpl::getIOLoop(size_t id) const

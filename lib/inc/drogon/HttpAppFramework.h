@@ -1265,7 +1265,7 @@ class DROGON_EXPORT HttpAppFramework : public trantor::NonCopyable
      * When the c-ares library is installed in the system, it runs with the best
      * performance.
      */
-    virtual const std::shared_ptr<trantor::Resolver> &getResolver() const = 0;
+    virtual std::shared_ptr<trantor::Resolver> getResolver() const = 0;
 
     /// Return true is drogon supports SSL(https)
     virtual bool supportSSL() const = 0;

@@ -18,6 +18,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpOperation.h>
 #include <drogon/config.h>
+#include <trantor/net/EventLoop.h>
 #include <json/json.h>
 #include <memory>
 #include <mutex>
@@ -48,6 +49,7 @@ struct InitBeforeMainFunction
 class HttpAppFrameworkImpl final : public HttpAppFramework
 {
     HttpOperation *op_;
+    trantor::EventLoop *loop_;
 
   public:
     HttpAppFrameworkImpl();
@@ -248,10 +250,9 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     {
         return uploadPath_;
     }
-    const std::shared_ptr<trantor::Resolver> &getResolver() const override
+    std::shared_ptr<trantor::Resolver> getResolver() const override
     {
-        static auto resolver = trantor::Resolver::newResolver(getLoop());
-        return resolver;
+        return trantor::Resolver::newResolver(getLoop());
     }
     HttpAppFramework &setUploadPath(const std::string &uploadPath) override;
     HttpAppFramework &setFileTypes(
@@ -420,7 +421,10 @@ class HttpAppFrameworkImpl final : public HttpAppFramework
     {
         return floatPrecisionInJson_;
     }
-    trantor::EventLoop *getLoop() const override;
+    trantor::EventLoop *getLoop() const override
+    {
+        return loop_;
+    }
 
     trantor::EventLoop *getIOLoop(size_t id) const override;
 
