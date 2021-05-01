@@ -12,6 +12,9 @@ else ()
     set(BUILD_PROGRAMS OFF)
 endif ()
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
+include(CheckCompiler)
+
 option(BUILD_CTL "Build drogon_ctl" ${BUILD_PROGRAMS})
 option(BUILD_EXAMPLES "Build examples" ${BUILD_PROGRAMS})
 option(BUILD_ORM "Build orm" ON)
@@ -124,7 +127,6 @@ else ()
     message(STATUS "use c++20")
 endif ()
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules/)
 
 # jsoncpp
 find_package(Jsoncpp REQUIRED)
