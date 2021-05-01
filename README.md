@@ -1,19 +1,9 @@
 ![](https://github.com/an-tao/drogon/wiki/images/drogon-white.jpg)
 
-<<<<<<< HEAD
 ![Build Drogon](https://github.com/Athenacle/drogon/workflows/Build%20Drogon/badge.svg)
 [![Build status](https://ci.appveyor.com/api/projects/status/6ju7h9l71u2vjoo5/branch/master?svg=true)](https://ci.appveyor.com/project/Athenacle/drogon/branch/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Athenacle/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Athenacle/drogon/alerts/)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/Athenacle/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Athenacle/drogon/context:javascript)
-=======
-[![Build Status](https://travis-ci.com/an-tao/drogon.svg?branch=master)](https://travis-ci.com/an-tao/drogon)
-![Build Status](https://github.com/an-tao/drogon/workflows/Build%20Drogon/badge.svg?branch=master)
-[![Build status](https://ci.appveyor.com/api/projects/status/12ffuf6j5vankgyb/branch/master?svg=true)](https://ci.appveyor.com/project/an-tao/drogon/branch/master)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/an-tao/drogon.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/an-tao/drogon/alerts/)
-[![Join the chat at https://gitter.im/drogon-web/community](https://badges.gitter.im/drogon-web/community.svg)](https://gitter.im/drogon-web/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Join the telegram group at https://t.me/joinchat/_mMNGv0748ZkMDAx](https://img.shields.io/badge/Telegram-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/joinchat/_mMNGv0748ZkMDAx)
-[![Docker image](https://img.shields.io/badge/Docker-image-blue.svg)](https://cloud.docker.com/u/drogonframework/repository/docker/drogonframework/drogon)
->>>>>>> v1.5.1
 
 English | [简体中文](./README.zh-CN.md) | [繁體中文](./README.zh-TW.md)
 
@@ -152,30 +142,148 @@ int main()
 
 ```
 * **customErrorHandlerFunction** prototype changed
-```c++
-// using customErrorHandlerFunction =
-//     std::function<HttpResponsePtr(HttpStatusCode,
-//                                   const HttpRequestPtr &,
-//                                   const HttpOperation &)>;
 
-// virtual HttpAppFramework &setCustomErrorHandler(
-//         customErrorHandlerFunction &&resp_generator) = 0;
+```c++
+// Commit: 716a05a4073dd9fb636c4c5360012ff191c05469
+using customErrorHandlerFunction =
+    std::function<HttpResponsePtr(HttpStatusCode,
+                                  const HttpRequestPtr &,
+                                  const HttpOperation &)>;
+
+/// Set custom error handler
+/**
+ * @param resp_generator is invoked when an error in the framework needs to
+ * be sent to the client to provide a custom layout.
+ *
+ * @param cached indicate that error response will be cached. If false,
+ * error handler function resp_generator will be called each time when error
+ * occurs; otherwise resp_generator will called `several' times(threadNum + 1)
+ *  with `NULL' HttpRequestPtr and then store them for later use
+ */
+virtual HttpAppFramework &HttpAppFramework::setCustomErrorHandler(
+            customErrorHandlerFunction &&resp_generator,
+            bool cached = false) = 0;
+
 int main()
 {
     auto app = drogon::create();
+
     app->setCustomErrorHandler(
         [] (HttpStatusCode sc,
             const HttpRequestPtr& req,
             const HttpOperation& op){
         auto resp = op.newHttpResponse();
         resp->setStatusCode(sc);
-        resp->setBody(req->getPath());
         return resp;
-    });
+    }, false);
+
     app->run();
 }
 
 ```
+<details>
+<summary>TL;DR: setCustomErrorHandler Unittest</summary>
+
+```c++
+namespace
+{
+auto errorHandler(int* count,
+                  bool cache,
+                  HttpStatusCode sc,
+                  const HttpRequestPtr& req,
+                  const HttpOperation& op)
+{
+    auto resp = op.newHttpResponse();
+
+    resp->setStatusCode(sc);
+
+    resp->setBody(
+        fmt::format("Request {}", req == nullptr ? "null" : "not null"));
+
+    if (req)
+    {
+        resp->addHeader("path", req->getPath());
+    }
+
+    if (cache)
+    {
+        EXPECT_EQ(req, nullptr);
+    }
+    else
+    {
+        EXPECT_NE(req, nullptr);
+    }
+
+    *count += 1;
+
+    return resp;
+}
+}  // namespace
+
+TEST_F(HttpApp, custom404Cached)
+{
+    int called = 0;
+
+    app->setCustomErrorHandler(std::bind(errorHandler,
+                                         &called,
+                                         true,
+                                         std::placeholders::_1,
+                                         std::placeholders::_2,
+                                         std::placeholders::_3),
+                               true);
+
+    size_t tn = 3;
+    app->setThreadNum(tn);
+
+    start();
+
+    int times = 10;
+    for (int i = 0; i < 10; i++)
+    {
+        const auto& [st, resp] = forward(Get, "", generateRandomString("/"));
+        EXPECT_EQ(st, ReqResult::Ok);
+        EXPECT_EQ(resp->getStatusCode(), k404NotFound);
+        auto body = resp->getBody();
+        EXPECT_TRUE(body == "Request null");
+        EXPECT_EQ(called, tn + 1);
+    }
+    EXPECT_EQ(called, tn + 1);
+}
+
+TEST_F(HttpApp, custom404NoCached)
+{
+    int called = 0;
+
+    app->setCustomErrorHandler(std::bind(errorHandler,
+                                         &called,
+                                         false,
+                                         std::placeholders::_1,
+                                         std::placeholders::_2,
+                                         std::placeholders::_3),
+                               false);
+    app->setThreadNum(2);
+    start();
+
+    int times = 10;
+    for (int i = 0; i < times; i++)
+    {
+        std::string&& p = generateRandomString("/");
+        const auto& [st, resp] = forward(Get, "", p);
+        EXPECT_EQ(st, ReqResult::Ok);
+        EXPECT_EQ(resp->getStatusCode(), k404NotFound);
+        auto body = resp->getBody();
+        EXPECT_TRUE(body == "Request not null");
+        auto path = resp->getHeader("path");
+        EXPECT_TRUE(path == p);
+        EXPECT_EQ(called, i + 1);
+    }
+    EXPECT_EQ(called, times);
+}
+```
+
+</details>
+
+
 * Add `registerController`, `registerFilter` helper
 ```c++
 template <typename T, typename... Args>

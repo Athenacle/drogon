@@ -12,7 +12,11 @@ if(Brotli_FOUND)
   add_executable(brotli_unittest BrotliUnittest.cpp)
 endif()
 
+aux_source_directory(combined COMBINED_SRC)
+add_executable(combined_unittest ${COMBINED_SRC})
+
 set(UNITTEST_TARGETS
+    combined_unittest
     drogon_msgbuffer_unittest
     drobject_unittest
     gzip_unittest
